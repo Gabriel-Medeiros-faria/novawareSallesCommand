@@ -125,8 +125,8 @@ export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers }) {
                 <select value={actType} onChange={e => setActType(e.target.value)} style={{ ...INP, width: "auto", border: "none", background: "rgba(255,255,255,0.03)", fontSize: 12 }}>
                     <option value="email">Email</option><option value="call">Call</option><option value="meeting">Meeting</option><option value="note">Note</option>
                 </select>
-                <input value={newAct} onChange={e => setNewAct(e.target.value)} onKeyDown={e => e.key === "Enter" && newAct.trim() && addActivity(actType, newAct.trim(), profile?.id).then(() => setNewAct(""))} placeholder="Nova anotação..." style={{ ...INP, border: "none", background: "transparent" }} />
-                <button onClick={() => newAct.trim() && addActivity(actType, newAct.trim(), profile?.id).then(() => setNewAct(""))} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, width: 32, height: 32, cursor: "pointer", fontWeight: 900, transition: "transform 0.1s" }} active={{transform: "scale(0.95)"}}>+</button>
+                <input value={newAct} onChange={e => setNewAct(e.target.value)} onKeyDown={e => e.key === "Enter" && newAct.trim() && addActivity(actType, newAct.trim(), profile).then(() => setNewAct(""))} placeholder="Nova anotação..." style={{ ...INP, border: "none", background: "transparent" }} />
+                <button onClick={() => newAct.trim() && addActivity(actType, newAct.trim(), profile).then(() => setNewAct(""))} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, width: 32, height: 32, cursor: "pointer", fontWeight: 900, transition: "transform 0.1s" }} active={{transform: "scale(0.95)"}}>+</button>
             </div>
           </div>
 

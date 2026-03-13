@@ -78,11 +78,13 @@ const supabase = (() => {
       } catch (e) { return { data: null, error: { message: "Erro de conexão" } }; }
     },
     async signOut() {
-      const tok = _token;
+      const headers = baseHeaders();
       localStorage.removeItem("sc_sess");
       _token = null;
       auth._emit("SIGNED_OUT", null);
-      if (tok) await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: baseHeaders() }).catch(() => { });
+      try {
+        await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers });
+      } catch (e) { }
       return { error: null };
     },
   };

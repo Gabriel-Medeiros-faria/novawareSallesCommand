@@ -103,7 +103,7 @@ export function UsersPage({ allUsers, onUserCreated }) {
                 ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
                     {users.map(u => (
-                    <div key={u.id} style={{ background: "rgba(255,255,255,0.015)", borderRadius: 2, padding: "20px", display: "flex", alignItems: "center", gap: 16, border: "1px solid rgba(255,255,255,0.04)", transition: "all 0.2s" }}
+                    <div key={u.id} style={{ background: "rgba(255,255,255,0.015)", borderRadius: 2, padding: "20px 24px 20px 20px", display: "flex", alignItems: "center", gap: 20, border: "1px solid rgba(255,255,255,0.04)", transition: "all 0.2s" }}
                          onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.2)"}
                          onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)"}>
                         <Avatar name={u.name} size={40} />

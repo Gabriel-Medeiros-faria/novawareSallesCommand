@@ -16,9 +16,21 @@ export function useGoals(profile) {
 
   const createGoal = async (payload) => {
     const { data, error } = await supabase.from("goals").insert([payload]).select().single();
-    if (data) setGoals(prev => [...prev, data]);
+    if (data) setGoals(prev => [data, ...prev]);
     return { data, error };
   };
 
-  return { goals, loading, createGoal };
+  const updateGoal = async (id, payload) => {
+    const { data, error } = await supabase.from("goals").update(payload).eq("id", id).select().single();
+    if (data) setGoals(prev => prev.map(g => g.id === id ? data : g));
+    return { data, error };
+  };
+
+  const deleteGoal = async (id) => {
+    const { error } = await supabase.from("goals").delete().eq("id", id);
+    if (!error) setGoals(prev => prev.filter(g => g.id !== id));
+    return { error };
+  };
+
+  return { goals, loading, createGoal, updateGoal, deleteGoal };
 }

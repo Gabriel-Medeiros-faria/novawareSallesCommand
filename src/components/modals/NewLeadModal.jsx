@@ -22,9 +22,15 @@ export function NewLeadModal({ onClose, onCreate, profile, allUsers }) {
       setError("Nome e empresa são obrigatórios."); return;
     }
     setLoading(true);
+    
+    const finalForm = { ...form };
+    // Force assignment based on role if not admin
+    if (profile?.role === "sdr") finalForm.sdr_id = profile.id;
+    if (profile?.role === "closer") finalForm.closer_id = profile.id;
+
     const { error } = await onCreate({ 
-        ...form, deal_value: Number(form.deal_value) || 0, 
-        sdr_id: form.sdr_id || null, closer_id: form.closer_id || null, status: "Novo Lead" 
+        ...finalForm, deal_value: Number(finalForm.deal_value) || 0, 
+        sdr_id: finalForm.sdr_id || null, closer_id: finalForm.closer_id || null, status: "Novo Lead" 
     });
     if (error) {
       setError(error.message); setLoading(false);

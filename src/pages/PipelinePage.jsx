@@ -2,10 +2,19 @@ import { useState, useEffect } from "react";
 import { SDR_STAGES, CLOSER_STAGES } from "../utils/constants";
 import { KanbanCol } from "../components/kanban/KanbanCol";
 
-export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers }) {
+export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers, profile }) {
+  const [userFilter, setUserFilter] = useState("all");
   const stages = pipelineType === "sdr" ? SDR_STAGES : CLOSER_STAGES;
-  const visibleLeads = s => leads.filter(l => l.status === s);
+  
+  const filteredLeads = leads.filter(l => {
+    if (userFilter === "all") return true;
+    return pipelineType === "sdr" ? l.sdr_id === userFilter : l.closer_id === userFilter;
+  });
+
+  const visibleLeads = s => filteredLeads.filter(l => l.status === s);
   const handleDrop = async (id, stage) => { if (id) await updateLead(id, { status: stage }); };
+
+  const selectableUsers = allUsers.filter(u => u.role === pipelineType);
 
   // Drag-to-scroll logic
   const [isDragging, setIsDragging] = useState(false);
@@ -69,9 +78,25 @@ export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers
                 {pipelineType === "sdr" ? "QUALIFICAÇÃO TÁTICA" : "FECHAMENTO ESTRATÉGICO"}
             </div>
             <div style={{ width: 1, height: 12, background: "rgba(255,255,255,0.1)" }} />
-            <div style={{ fontSize: 13, color: "#6366f1", fontWeight: 900 }}>{leads.length} LEADS ATIVOS</div>
+            <div style={{ fontSize: 13, color: "#6366f1", fontWeight: 900 }}>{filteredLeads.length} LEADS ATIVOS</div>
           </div>
         </div>
+
+        {profile?.role === "admin" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 10, fontWeight: 900, color: "#475569", textTransform: "uppercase" }}>Filtrar por {pipelineType === "sdr" ? "SDR" : "Closer"}:</span>
+            <select 
+              value={userFilter} 
+              onChange={e => setUserFilter(e.target.value)}
+              style={{ padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 2, color: "#94a3b8", fontSize: 12, fontWeight: 700, outline: "none", cursor: "pointer" }}
+            >
+              <option value="all">TODOS OS LEADS</option>
+              {selectableUsers.map(u => (
+                <option key={u.id} value={u.id}>{u.name.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       
       <style>{`

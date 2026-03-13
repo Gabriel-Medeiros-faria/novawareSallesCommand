@@ -34,10 +34,10 @@ export function LoginPage() {
 
       <div style={{ width: "100%", maxWidth: 390, animation: "fade 0.4s ease" }}>
         {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ display: "inline-flex", width: 52, height: 52, borderRadius: 16, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", alignItems: "center", justifyContent: "center", fontSize: 23, marginBottom: 12, boxShadow: "0 8px 30px rgba(99,102,241,0.3)" }}>⚡</div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f1f5f9", margin: "0 0 5px", letterSpacing: "-0.02em" }}>Sales Command</h1>
-          <p style={{ fontSize: 13, color: "#334155", margin: 0 }}>Acesso restrito a colaboradores</p>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <img src="/logo.png" alt="Logo" style={{ width: 80, height: "auto", marginBottom: 16, filter: "drop-shadow(0 8px 15px rgba(99,102,241,0.2))" }} />
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#f1f5f9", margin: "0 0 5px", letterSpacing: "-0.03em" }}>Novaware - Sales Command</h1>
+          <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>Acesso restrito a colaboradores</p>
         </div>
 
         {/* Card de login */}

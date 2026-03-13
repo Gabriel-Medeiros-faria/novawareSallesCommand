@@ -1,19 +1,42 @@
 import { useState } from "react";
-import { Avatar, RoleBadge, ProgressBar, Spinner, Drawer, Field } from "../components/ui/Atoms";
+import { Avatar, RoleBadge, ProgressBar, Spinner, Drawer, Field, Badge } from "../components/ui/Atoms";
 import { goalLabel, periodLabel, periodColor, fmt, INP } from "../utils/constants";
 
-export function GoalsPage({ goals, createGoal, profile, allUsers }) {
+export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, allUsers }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
   const [newGoal, setNewGoal] = useState({ user_id: "", type: "leads_qualificados", target: "", period: "mensal", month: new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) });
   const [saving, setSaving] = useState(false);
   const visibleUsers = profile?.role === "admin" ? allUsers.filter(u => u.role !== "admin") : [profile].filter(Boolean);
 
-  const handleAdd = async () => {
+  const handleOpenAdd = () => {
+    setEditingGoal(null);
+    setNewGoal({ user_id: "", type: "leads_qualificados", target: "", period: "mensal", month: new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) });
+    setShowAdd(true);
+  };
+
+  const handleOpenEdit = (goal) => {
+    setEditingGoal(goal);
+    setNewGoal({ user_id: goal.user_id, type: goal.type, target: goal.target, period: goal.period, month: goal.month });
+    setShowAdd(true);
+  };
+
+  const handleSave = async () => {
     if (!newGoal.target || !newGoal.user_id) return;
     setSaving(true);
-    await createGoal({ ...newGoal, target: Number(newGoal.target), current: 0 });
+    if (editingGoal) {
+      await updateGoal(editingGoal.id, { ...newGoal, target: Number(newGoal.target) });
+    } else {
+      await createGoal({ ...newGoal, target: Number(newGoal.target), current: 0 });
+    }
     setSaving(false); setShowAdd(false);
     setNewGoal(p => ({ ...p, user_id: "", target: "" }));
+  };
+
+  const handleDelete = async (id) => {
+    if (confirm("Tem certeza que deseja excluir esta meta tática?")) {
+      await deleteGoal(id);
+    }
   };
 
   return (
@@ -23,7 +46,7 @@ export function GoalsPage({ goals, createGoal, profile, allUsers }) {
           <h1 style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9", margin: "0 0 8px", letterSpacing: "-1px", textTransform: "uppercase" }}>GESTÃO DE METAS</h1>
           <div style={{ fontSize: 13, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>PERFORMANCE E MÉTRICAS TÁTICAS DA EQUIPE</div>
         </div>
-        {profile?.role === "admin" && <button onClick={() => setShowAdd(true)} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "12px 24px", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>+ DEFINIR NOVA META</button>}
+        {profile?.role === "admin" && <button onClick={handleOpenAdd} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "12px 24px", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>+ DEFINIR NOVA META</button>}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -52,9 +75,17 @@ export function GoalsPage({ goals, createGoal, profile, allUsers }) {
                   {userGoals.map(g => {
                     const pct = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
                     return (
-                      <div key={g.id} style={{ background: "rgba(3,7,18,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 2, padding: 24 }}>
+                      <div key={g.id} style={{ background: "rgba(3,7,18,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 2, padding: 24, position: "relative" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                          <div style={{ fontSize: 12, color: "#475569", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em" }}>{goalLabel(g.type)}</div>
+                          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                            {profile?.role === "admin" && (
+                              <div style={{ display: "flex", gap: 6, marginRight: 8 }}>
+                                <button onClick={() => handleOpenEdit(g)} style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", color: "#6366f1", borderRadius: 2, width: 24, height: 24, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
+                                <button onClick={() => handleDelete(g.id)} style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", borderRadius: 2, width: 24, height: 24, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                              </div>
+                            )}
+                            <div style={{ fontSize: 12, color: "#475569", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em" }}>{goalLabel(g.type)}</div>
+                          </div>
                           <Badge color={periodColor(g.period)} bg={`${periodColor(g.period)}08`}>
                             {periodLabel(g.period)}
                           </Badge>
@@ -79,11 +110,11 @@ export function GoalsPage({ goals, createGoal, profile, allUsers }) {
       </div>
 
       {showAdd && (
-        <Drawer open={true} onClose={() => setShowAdd(false)} title="Configurar Nova Meta">
+        <Drawer open={true} onClose={() => setShowAdd(false)} title={editingGoal ? "Modificar Meta Tática" : "Configurar Nova Meta"}>
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <Field label="Colaborador Alvo">
-                    <select value={newGoal.user_id} onChange={e => setNewGoal(p => ({ ...p, user_id: e.target.value }))} style={{ ...INP, padding: "12px 14px" }}>
+                    <select value={newGoal.user_id} onChange={e => setNewGoal(p => ({ ...p, user_id: e.target.value }))} style={{ ...INP, padding: "12px 14px" }} disabled={!!editingGoal}>
                         <option value="">Selecionar estratégico...</option>
                         {allUsers.filter(u => u.role !== "admin").map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                     </select>
@@ -120,9 +151,9 @@ export function GoalsPage({ goals, createGoal, profile, allUsers }) {
 
             <div style={{ marginTop: "auto", display: "flex", gap: 16 }}>
                 <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#475569", borderRadius: 2, padding: "14px", cursor: "pointer", fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>Descartar</button>
-                <button onClick={handleAdd} disabled={saving} style={{ flex: 2, background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "14px", cursor: "pointer", fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", gap: 10, alignItems: "center", justifyContent: "center" }}>
+                <button onClick={handleSave} disabled={saving} style={{ flex: 2, background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "14px", cursor: "pointer", fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", gap: 10, alignItems: "center", justifyContent: "center" }}>
                 {saving && <Spinner size={16} color="#fff" />}
-                {saving ? "PROCESSANDO..." : "CONFIRMAR ESTRATÉGIA"}
+                {saving ? "PROCESSANDO..." : editingGoal ? "EFETUAR ALTERAÇÃO" : "CONFIRMAR ESTRATÉGIA"}
                 </button>
             </div>
           </div>

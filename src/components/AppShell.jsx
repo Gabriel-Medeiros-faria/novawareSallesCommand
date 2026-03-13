@@ -19,13 +19,13 @@ export function AppShell() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { leads, allUsers, loading, updateLead, createLead, refreshLeads } = useLeads(profile);
-  const { goals, createGoal } = useGoals(profile);
+  const { goals, createGoal, updateGoal, deleteGoal } = useGoals(profile);
 
   useEffect(() => {
     const handleKeys = (e) => {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
-        if (e.key.toLowerCase() === "c") { e.preventDefault(); setShowNewLead(true); }
-        if (e.key === "Escape") { setSelectedLead(null); setShowNewLead(false); }
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      if (e.key.toLowerCase() === "c") { e.preventDefault(); setShowNewLead(true); }
+      if (e.key === "Escape") { setSelectedLead(null); setShowNewLead(false); }
     };
     window.addEventListener("keydown", handleKeys);
     return () => window.removeEventListener("keydown", handleKeys);
@@ -56,9 +56,9 @@ export function AppShell() {
 
       {/* Sidebar */}
       <div style={{ width: sidebarOpen ? 240 : 64, background: "rgba(3,7,18,0.6)", backdropFilter: "blur(20px)", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", transition: "width 0.3s cubic-bezier(0.16,1,0.3,1)", flexShrink: 0 }}>
-        <div style={{ padding: sidebarOpen ? "24px 20px" : "24px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 2, background: "linear-gradient(135deg,#6366f1,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, fontWeight: 900 }}>S</div>
-          {sidebarOpen && <span style={{ fontSize: 14, fontWeight: 900, color: "#f1f5f9", letterSpacing: "0.1em", textTransform: "uppercase" }}>Sales Command</span>}
+        <div style={{ padding: sidebarOpen ? "20px" : "20px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
+          <img src="/logo.png" alt="Sales Command Logo" style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 4 }} />
+          {sidebarOpen && <span style={{ fontSize: 14, fontWeight: 900, color: "#f1f5f9", letterSpacing: "0.05em", textTransform: "uppercase" }}>NW - Sales Command</span>}
         </div>
 
         {sidebarOpen && profile && (
@@ -79,9 +79,9 @@ export function AppShell() {
             return (
               <div key={item.id || idx}>
                 {item.divider && <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "12px 14px" }} />}
-                <button onClick={() => setPage(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: sidebarOpen ? "12px 14px" : "12px", borderRadius: 2, border: "none", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#818cf8" : item.accent ? "#fbbf24" : "#64748b", cursor: "pointer", transition: "all 0.2s", textAlign: "left", position: "relative", fontFamily: "inherit" }}>
+                <button onClick={() => setPage(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: sidebarOpen ? "12px 14px" : "12px", borderRadius: 2, border: "none", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#818cf8" : item.accent ? "#fbbf24" : "#64748b", cursor: "pointer", transition: "all 0.2s", textAlign: "left", position: "relative", fontFamily: "inherit", overflow: "hidden" }}>
                   <span style={{ fontSize: 16, flexShrink: 0, opacity: active ? 1 : 0.6 }}>{item.icon}</span>
-                  {sidebarOpen && <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{item.label}</span>}
+                  <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.05em", whiteSpace: "nowrap", opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s", pointerEvents: sidebarOpen ? "auto" : "none" }}>{item.label}</span>
                   {active && <div style={{ position: "absolute", right: 0, top: "25%", height: "50%", width: 2, background: "#6366f1" }} />}
                 </button>
               </div>
@@ -90,13 +90,14 @@ export function AppShell() {
         </nav>
 
         <div style={{ padding: "16px 8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={signOut} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: sidebarOpen ? "12px 14px" : "12px", borderRadius: 2, border: "none", background: "transparent", color: "#475569", cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}
+          <button onClick={signOut} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: sidebarOpen ? "12px 14px" : "12px", borderRadius: 2, border: "none", background: "transparent", color: "#475569", cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", overflow: "hidden" }}
             onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.05)" }}
             onMouseLeave={e => { e.currentTarget.style.color = "#475569"; e.currentTarget.style.background = "transparent" }}
           >
-            <span style={{ fontSize: 16 }}>⎋</span>{sidebarOpen && <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.05em", textTransform: "uppercase" }}>Sair</span>}
+            <span style={{ fontSize: 16 }}>⎋</span>
+            <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.05em", textTransform: "uppercase", opacity: sidebarOpen ? 1 : 0, transition: "opacity 0.2s" }}>Sair</span>
           </button>
-          <button onClick={() => setSidebarOpen(p => !p)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: 36, background: "transparent", color: "#1e293b", cursor: "pointer", border: "none" }}>
+          <button onClick={() => setSidebarOpen(p => !p)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: 36, background: "rgba(255,255,255,0.03)", color: "#475569", cursor: "pointer", border: "none", marginTop: 8, borderRadius: 2, fontSize: 14, fontWeight: 900 }}>
             {sidebarOpen ? "«" : "»"}
           </button>
         </div>
@@ -110,25 +111,25 @@ export function AppShell() {
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             {loading && <Spinner size={16} />}
-            <button onClick={() => setShowNewLead(true)} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "10px 20px", cursor: "pointer", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", transition: "transform 0.1s" }} onMouseDown={e => e.currentTarget.style.transform="scale(0.96)"} onMouseUp={e => e.currentTarget.style.transform="scale(1)"}>+ NOVO LEAD</button>
+            <button onClick={() => setShowNewLead(true)} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "10px 20px", cursor: "pointer", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", transition: "transform 0.1s" }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.96)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>+ NOVO LEAD</button>
           </div>
         </div>
 
         <div style={{ flex: 1, overflowY: page.includes("pipeline") ? "hidden" : "auto", position: "relative" }}>
-          <div style={{ 
-            padding: "32px", 
-            maxWidth: page.includes("pipeline") ? "none" : 1600, 
+          <div style={{
+            padding: "32px",
+            maxWidth: page.includes("pipeline") ? "none" : 1600,
             height: page.includes("pipeline") ? "100%" : "auto",
-            margin: "0 auto", 
+            margin: "0 auto",
             animation: "fade 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
             display: "flex",
             flexDirection: "column"
           }}>
             {page === "dashboard" && <DashboardPage leads={leads} goals={goals} profile={profile} allUsers={allUsers} />}
-            {page === "sdr_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="sdr" onOpen={setSelectedLead} allUsers={allUsers} />}
-            {page === "closer_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="closer" onOpen={setSelectedLead} allUsers={allUsers} />}
+            {page === "sdr_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="sdr" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} />}
+            {page === "closer_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="closer" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} />}
             {page === "leads" && <LeadsPage leads={leads} onOpen={setSelectedLead} allUsers={allUsers} />}
-            {page === "goals" && <GoalsPage goals={goals} createGoal={createGoal} profile={profile} allUsers={allUsers} />}
+            {page === "goals" && <GoalsPage goals={goals} createGoal={createGoal} updateGoal={updateGoal} deleteGoal={deleteGoal} profile={profile} allUsers={allUsers} />}
             {page === "copilot" && <CopilotPage leads={leads} profile={profile} />}
             {page === "users" && profile?.role === "admin" && <UsersPage allUsers={allUsers} onUserCreated={refreshLeads} />}
           </div>
