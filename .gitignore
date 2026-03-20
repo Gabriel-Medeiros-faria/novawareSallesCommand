@@ -1,3 +1,6 @@
 node_modules
 .env
 .vercel
+whatsapp-service/auth_info_baileys/
+whatsapp-service/.env
+node_modules/

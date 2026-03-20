@@ -14,7 +14,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
     if (showQR) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch("http://localhost:3001/status");
+          const res = await fetch("https://novaware-whatsapp.onrender.com/status");
           const data = await res.json();
           if (data.connected) {
             setShowQR(false);
@@ -43,7 +43,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
       setSendingWA(true);
       
       // Primeiro verifica status
-      const statusRes = await fetch("http://localhost:3001/status");
+      const statusRes = await fetch("https://novaware-whatsapp.onrender.com/status");
       const statusData = await statusRes.json();
 
       if (!statusData.connected) {
@@ -57,7 +57,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
         return;
       }
 
-      const res = await fetch("http://localhost:3001/send-report");
+      const res = await fetch("https://novaware-whatsapp.onrender.com/send-report");
       const data = await res.json();
       if (data.success) {
         alert("✅ Relatório enviado com sucesso!");

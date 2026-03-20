@@ -108,53 +108,82 @@ async function sendWeeklyReport(socketInstance) {
             return;
         }
 
+        const last7Days = new Date();
+        last7Days.setDate(last7Days.getDate() - 7);
+        const last7DaysStr = last7Days.toISOString();
+
+        // Busca dados necessários
         const { data: leads, error: leadsError } = await supabase.from("leads").select("*");
         const { data: users, error: usersError } = await supabase.from("profiles").select("*");
+        const { data: activities, error: actError } = await supabase.from("lead_activities")
+            .select("*")
+            .gt("created_at", last7DaysStr);
 
-        if (leadsError) console.error("❌ Erro ao buscar leads:", leadsError.message);
-        if (usersError) console.error("❌ Erro ao buscar usuários:", usersError.message);
-
-        if (!leads || !users) {
-            console.error("❌ Erro: Dados não retornados do Supabase");
+        if (leadsError || usersError) {
+            console.error("❌ Erro ao buscar dados do Supabase:", leadsError || usersError);
             return;
         }
 
-        const totalLeads = leads.length;
-        const last7Days = new Date();
-        last7Days.setDate(last7Days.getDate() - 7);
+        // Filtro de leads que foram movidos ou criados nos últimos 7 dias
+        const activeLeadsWeek = leads.filter(l => new Date(l.updated_at || l.created_at) > last7Days);
 
-        const newLeadsWeek = leads.filter(l => new Date(l.created_at) > last7Days).length;
-        const closedGains = leads.filter(l => l.status === "Fechado - Ganho" && new Date(l.updated_at || l.created_at) > last7Days);
-        const totalValueWeek = closedGains.reduce((acc, curr) => acc + (curr.deal_value || 0), 0);
+        // Métricas Gerais (Soma de tudo)
+        const genMeetingsScheduled = activeLeadsWeek.filter(l => l.status === "Reunião Agendada").length;
+        const genMeetingsHeld = activeLeadsWeek.filter(l => l.status === "Reunião Realizada").length;
+        const genProposals = activeLeadsWeek.filter(l => l.status === "Proposta Enviada").length;
+        const genGains = activeLeadsWeek.filter(l => l.status === "Fechado - Ganho");
+        const genGainsCount = genGains.length;
+        const genTotalValue = genGains.reduce((acc, curr) => acc + (curr.deal_value || 0), 0);
 
-        let msg = `*📊 RESUMO SEMANAL - NOVAWARE SALES*\n`;
-        msg += `_Relatório gerado em: ${new Date().toLocaleDateString("pt-BR")}_\n\n`;
+        let msg = `*📊 RELATÓRIO DE PERFORMANCE SEMANAL*\n`;
+        msg += `_Período: ${last7Days.toLocaleDateString("pt-BR")} a ${new Date().toLocaleDateString("pt-BR")}_\n\n`;
 
-        msg += `*📈 PERFORMANCE GERAL*\n`;
-        msg += `• Total de Leads no Funil: ${totalLeads}\n`;
-        msg += `• Novos Leads (7 dias): ${newLeadsWeek}\n`;
-        msg += `• Vendas Fechadas (7 dias): ${closedGains.length}\n`;
-        msg += `• Receita Gerada (7 dias): ${fmt(totalValueWeek)}\n\n`;
+        msg += `*📈 RESUMO GERAL*\n`;
+        msg += `• Reuniões Agendadas: ${genMeetingsScheduled}\n`;
+        msg += `• Reuniões Realizadas: ${genMeetingsHeld}\n`;
+        msg += `• Propostas Enviadas: ${genProposals}\n`;
+        msg += `• Contratos Fechados: ${genGainsCount}\n`;
+        msg += `• Receita Gerada: ${fmt(genTotalValue)}\n\n`;
 
-        msg += `*👥 DESEMPENHO POR CONSULTOR*\n`;
-        
-        users.filter(u => u.role !== "admin").forEach(u => {
-            const uLeads = leads.filter(l => l.sdr_id === u.id || l.closer_id === u.id).length;
-            const uGains = leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho" && new Date(l.updated_at || l.created_at) > last7Days).length;
+        // Métricas por Consultor
+        msg += `*👥 DESEMPENHO POR CONSULTOR*\n\n`;
+
+        users.forEach(u => {
+            const userRole = u.role?.toLowerCase();
+            if (userRole === "admin") return;
+
+            // Filtra leads atualizados deste usuário na semana
+            const uLeads = activeLeadsWeek.filter(l => l.sdr_id === u.id || l.closer_id === u.id);
             
-            if (uLeads > 0 || uGains > 0) {
-                msg += `• *${u.name.toUpperCase()}*: ${uLeads} leads ativos | ${uGains} fechamentos\n`;
+            if (uLeads.length > 0) {
+                msg += `*${u.name.toUpperCase()}* (${u.role.toUpperCase()})\n`;
+
+                if (userRole === "sdr" || userRole === "vendedor") {
+                    const scheduled = uLeads.filter(l => l.sdr_id === u.id && l.status === "Reunião Agendada").length;
+                    msg += `  ↳ 📅 Agendamentos: ${scheduled}\n`;
+                }
+
+                if (userRole === "closer" || userRole === "vendedor") {
+                    const held = uLeads.filter(l => l.closer_id === u.id && l.status === "Reunião Realizada").length;
+                    const proposals = uLeads.filter(l => l.closer_id === u.id && l.status === "Proposta Enviada").length;
+                    const wins = uLeads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").length;
+                    
+                    msg += `  ↳ ✅ Reuniões Feitas: ${held}\n`;
+                    msg += `  ↳ 📄 Propostas: ${proposals}\n`;
+                    msg += `  ↳ 💰 Ganhos: ${wins}\n`;
+                }
+                msg += `\n`;
             }
         });
 
-        msg += `\n🚀 _Vamos pra cima! Ótimo final de semana a todos._`;
+        msg += `🚀 _Salles Command - Voando baixo!_`;
 
         await socketInstance.sendMessage(groupId, { text: msg });
-        console.log("✅ Relatório enviado com sucesso para o grupo!");
+        console.log("✅ Relatório detalhado enviado com sucesso!");
 
     } catch (error) {
         console.error("❌ Erro ao gerar/enviar relatório:", error);
-        throw error; // Repassa para o chamador (HTTP Route)
+        throw error;
     }
 }
 
