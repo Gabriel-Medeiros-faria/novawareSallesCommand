@@ -1,14 +1,75 @@
+import React from "react";
 import { RoleBadge, MetricCard, Avatar, Badge, Spinner } from "../components/ui/Atoms";
 import { fmt } from "../utils/constants";
 
 export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
   const { closerStages = [], getStageColor = () => "#6b7280", loading = false } = stagesData || {};
 
+  const [sendingWA, setSendingWA] = React.useState(false);
+  const [showQR, setShowQR] = React.useState(false);
+  const [qrCode, setQrCode] = React.useState(null);
+
+  React.useEffect(() => {
+    let interval;
+    if (showQR) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch("http://localhost:3001/status");
+          const data = await res.json();
+          if (data.connected) {
+            setShowQR(false);
+            setQrCode(null);
+            clearInterval(interval);
+            alert("✅ WhatsApp Conectado!");
+          } else if (data.qr) {
+            setQrCode(data.qr);
+          }
+        } catch (e) {
+          console.error("Erro ao poll status:", e);
+        }
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [showQR]);
+
   if (loading) return (
     <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", padding: 100 }}>
       <Spinner size={40} />
     </div>
   );
+
+  const handleSendWhatsApp = async () => {
+    try {
+      setSendingWA(true);
+      
+      // Primeiro verifica status
+      const statusRes = await fetch("http://localhost:3001/status");
+      const statusData = await statusRes.json();
+
+      if (!statusData.connected) {
+        if (statusData.qr) {
+          setQrCode(statusData.qr);
+          setShowQR(true);
+        } else {
+          alert("⏳ Aguardando o servidor gerar o QR Code. Tente novamente em alguns segundos.");
+        }
+        setSendingWA(false);
+        return;
+      }
+
+      const res = await fetch("http://localhost:3001/send-report");
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Relatório enviado com sucesso!");
+      } else {
+        alert("❌ Erro ao enviar: " + (data.error || "Serviço offline"));
+      }
+    } catch (err) {
+      alert("❌ Erro: O serviço de WhatsApp parece estar offline.");
+    } finally {
+      setSendingWA(false);
+    }
+  };
 
   const closerStageNames = closerStages.map(s => s.name);
   const total = leads.length;
@@ -38,7 +99,32 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
               {profile?.role === "admin" ? "VISÃO TÁTICA DA OPERAÇÃO COMERCIAL" : profile?.role === "sdr" ? "SUA ÁREA DE PROSPECÇÃO" : "SUAS NEGOCIAÇÕES"}
             </p>
           </div>
-          <RoleBadge role={profile?.role} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {profile?.role === "admin" && (
+              <button 
+                onClick={handleSendWhatsApp}
+                disabled={sendingWA}
+                style={{ 
+                  background: sendingWA ? "rgba(34,197,94,0.1)" : "rgba(34,197,94,0.05)", 
+                  border: "1px solid rgba(34,197,94,0.2)", 
+                  color: "#22c55e", 
+                  borderRadius: 2, 
+                  padding: "8px 16px", 
+                  fontSize: 11, 
+                  fontWeight: 900, 
+                  cursor: "pointer", 
+                  textTransform: "uppercase", 
+                  letterSpacing: "0.05em",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8
+                }}
+              >
+                {sendingWA ? "ENVIANDO..." : "🟢 DISPARAR RESUMO WPP"}
+              </button>
+            )}
+            <RoleBadge role={profile?.role} />
+          </div>
         </div>
       </div>
 
@@ -125,6 +211,23 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
           </div>
         )}
       </div>
+
+      {showQR && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(8px)" }}>
+          <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.08)", padding: 40, borderRadius: 2, textAlign: "center", maxWidth: 400, width: "90%" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, color: "#f1f5f9", textTransform: "uppercase", marginBottom: 24, letterSpacing: "1px" }}>CONECTAR WHATSAPP</h2>
+            {qrCode ? (
+              <div style={{ background: "white", padding: 16, borderRadius: 2, display: "inline-block", marginBottom: 24 }}>
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCode)}`} alt="WhatsApp QR Code" />
+              </div>
+            ) : (
+              <div style={{ padding: 40 }}><Spinner size={30} /></div>
+            )}
+            <p style={{ fontSize: 13, color: "#475569", fontWeight: 800, textTransform: "uppercase", marginBottom: 24 }}>ESCANEIE COM O SEU APP DO WHATSAPP PARA ATIVAR O SISTEMA</p>
+            <button onClick={() => setShowQR(false)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "#f8fafc", padding: "10px 20px", fontWeight: 900, cursor: "pointer", textTransform: "uppercase", fontSize: 11 }}>CANCELAR</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
