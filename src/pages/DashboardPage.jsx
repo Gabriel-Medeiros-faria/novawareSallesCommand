@@ -14,7 +14,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
     if (showQR) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch("https://novaware-whatsapp.onrender.com/status");
+          const res = await fetch("http://localhost:3001/status");
           const data = await res.json();
           if (data.connected) {
             setShowQR(false);
@@ -43,12 +43,12 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
       setSendingWA(true);
       
       // Primeiro verifica status
-      const statusRes = await fetch("https://novaware-whatsapp.onrender.com/status");
-      const statusData = await statusRes.json();
+      const res = await fetch("http://localhost:3001/status");
+      const data = await res.json();
 
-      if (!statusData.connected) {
-        if (statusData.qr) {
-          setQrCode(statusData.qr);
+      if (!data.connected) {
+        if (data.qr) {
+          setQrCode(data.qr);
           setShowQR(true);
         } else {
           alert("⏳ Aguardando o servidor gerar o QR Code. Tente novamente em alguns segundos.");
@@ -57,12 +57,20 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
         return;
       }
 
-      const res = await fetch("https://novaware-whatsapp.onrender.com/send-report");
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Relatório enviado com sucesso!");
+      // Se estiver conectado, pergunta o que fazer
+      const choice = window.confirm("✅ WhatsApp Conectado!\n\nDeseja ENVIAR o resumo para o grupo agora?\n\n(Clique em CANCELAR se quiser apenas verificar a conexão)");
+      
+      if (!choice) {
+        setSendingWA(false);
+        return;
+      }
+
+      const sendRes = await fetch("http://localhost:3001/send-report");
+      const sendData = await sendRes.json();
+      if (sendData.success) {
+        alert("🚀 Relatório enviado com sucesso!");
       } else {
-        alert("❌ Erro ao enviar: " + (data.error || "Serviço offline"));
+        alert("❌ Erro ao enviar: " + (sendData.error || "Serviço offline"));
       }
     } catch (err) {
       alert("❌ Erro: O serviço de WhatsApp parece estar offline.");

@@ -1,6 +1,6 @@
-const { 
-    default: makeWASocket, 
-    useMultiFileAuthState, 
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
     DisconnectReason,
     fetchLatestBaileysVersion
 } = require("@whiskeysockets/baileys");
@@ -29,7 +29,7 @@ const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency:
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
-    
+
     // Tenta buscar a versão mais recente para evitar erro 405
     const { version, isLatest } = await fetchLatestBaileysVersion();
     console.log(`Usando versão WhatsApp: ${version.join(".")} (Latest: ${isLatest})`);
@@ -54,10 +54,20 @@ async function connectToWhatsApp() {
         }
 
         if (connection === "close") {
-            isConnected = false;
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log("Conexão fechada. Motivo:", lastDisconnect.error, "Tentando reconectar...", shouldReconnect);
-            if (shouldReconnect) connectToWhatsApp();
+
+            isConnected = false;
+            currentQR = null;
+
+            if (shouldReconnect) {
+                connectToWhatsApp();
+            } else {
+                console.log("❌ Sessão encerrada ou inválida. Reiniciando para gerar novo QR Code em 3s...");
+                setTimeout(() => {
+                    connectToWhatsApp();
+                }, 3000);
+            }
         } else if (connection === "open") {
             isConnected = true;
             currentQR = null;
@@ -83,11 +93,11 @@ app.get("/status", (req, res) => {
 app.get("/send-report", async (req, res) => {
     try {
         console.log(`[API] Solicitação de relatório. Status atual: connected=${isConnected}`);
-        
+
         if (!isConnected || !sock) {
-            return res.status(503).json({ 
-                success: false, 
-                error: "WhatsApp não está conectado no momento. Por favor, aguarde a conexão estabilizar." 
+            return res.status(503).json({
+                success: false,
+                error: "WhatsApp não está conectado no momento. Por favor, aguarde a conexão estabilizar."
             });
         }
 
@@ -115,65 +125,81 @@ async function sendWeeklyReport(socketInstance) {
         // Busca dados necessários
         const { data: leads, error: leadsError } = await supabase.from("leads").select("*");
         const { data: users, error: usersError } = await supabase.from("profiles").select("*");
-        const { data: activities, error: actError } = await supabase.from("lead_activities")
-            .select("*")
-            .gt("created_at", last7DaysStr);
 
         if (leadsError || usersError) {
             console.error("❌ Erro ao buscar dados do Supabase:", leadsError || usersError);
             return;
         }
 
+        console.log(`[DEBUG] Total de Leads: ${leads.length}`);
+        console.log(`[DEBUG] Filtro Data: ${last7DaysStr}`);
+
         // Filtro de leads que foram movidos ou criados nos últimos 7 dias
-        const activeLeadsWeek = leads.filter(l => new Date(l.updated_at || l.created_at) > last7Days);
+        const activeLeadsWeek = leads.filter(l => {
+            const date = new Date(l.updated_at || l.last_interaction || l.created_at);
+            return date > last7Days;
+        });
+
+        console.log(`[DEBUG] Leads Ativos na Semana: ${activeLeadsWeek.length}`);
+        if (leads.length > 0) {
+            const statuses = leads.map(l => l.status);
+            const statusCounts = statuses.reduce((acc, s) => { acc[s] = (acc[s] || 0) + 1; return acc; }, {});
+            console.log("[DEBUG] Contagem Geral por Status:", statusCounts);
+        }
 
         // Métricas Gerais (Soma de tudo)
-        const genMeetingsScheduled = activeLeadsWeek.filter(l => l.status === "Reunião Agendada").length;
-        const genMeetingsHeld = activeLeadsWeek.filter(l => l.status === "Reunião Realizada").length;
-        const genProposals = activeLeadsWeek.filter(l => l.status === "Proposta Enviada").length;
-        const genGains = activeLeadsWeek.filter(l => l.status === "Fechado - Ganho");
+        const genMeetingsScheduled = activeLeadsWeek.filter(l => (l.status || "").trim() === "Reunião Agendada").length;
+        const genMeetingsHeld = activeLeadsWeek.filter(l => (l.status || "").trim() === "Reunião Realizada").length;
+        const genProposals = activeLeadsWeek.filter(l => (l.status || "").trim() === "Proposta Enviada").length;
+        const genGains = activeLeadsWeek.filter(l => (l.status || "").trim() === "Fechado - Ganho");
         const genGainsCount = genGains.length;
         const genTotalValue = genGains.reduce((acc, curr) => acc + (curr.deal_value || 0), 0);
+
+        console.log(`[DEBUG] Resumo Geral Calculado: Agendadas=${genMeetingsScheduled}, Realizadas=${genMeetingsHeld}, Propostas=${genProposals}, Ganhos=${genGainsCount}`);
+        console.log(`[DEBUG] Total Users para Relatório: ${users.filter(u => u.role !== 'admin').length}`);
 
         let msg = `*📊 RELATÓRIO DE PERFORMANCE SEMANAL*\n`;
         msg += `_Período: ${last7Days.toLocaleDateString("pt-BR")} a ${new Date().toLocaleDateString("pt-BR")}_\n\n`;
 
-        msg += `*📈 RESUMO GERAL*\n`;
+        msg += `*📈 RESUMO GERAL (ESTA SEMANA)*\n`;
         msg += `• Reuniões Agendadas: ${genMeetingsScheduled}\n`;
         msg += `• Reuniões Realizadas: ${genMeetingsHeld}\n`;
         msg += `• Propostas Enviadas: ${genProposals}\n`;
         msg += `• Contratos Fechados: ${genGainsCount}\n`;
         msg += `• Receita Gerada: ${fmt(genTotalValue)}\n\n`;
 
+        msg += `*🗂️ STATUS DO FUNIL (TOTAL)*\n`;
+        msg += `• Total de Leads Ativos: ${leads.length}\n\n`;
+
         // Métricas por Consultor
         msg += `*👥 DESEMPENHO POR CONSULTOR*\n\n`;
 
-        users.forEach(u => {
+        // Ordena usuários para mostrar vendedores que tiveram atividade primeiro, mas mostra todos
+        const staff = users.filter(u => u.role?.toLowerCase() !== "admin");
+
+        staff.forEach(u => {
             const userRole = u.role?.toLowerCase();
-            if (userRole === "admin") return;
 
             // Filtra leads atualizados deste usuário na semana
             const uLeads = activeLeadsWeek.filter(l => l.sdr_id === u.id || l.closer_id === u.id);
-            
-            if (uLeads.length > 0) {
-                msg += `*${u.name.toUpperCase()}* (${u.role.toUpperCase()})\n`;
 
-                if (userRole === "sdr" || userRole === "vendedor") {
-                    const scheduled = uLeads.filter(l => l.sdr_id === u.id && l.status === "Reunião Agendada").length;
-                    msg += `  ↳ 📅 Agendamentos: ${scheduled}\n`;
-                }
+            msg += `*${u.name.toUpperCase()}* (${u.role.toUpperCase()})\n`;
 
-                if (userRole === "closer" || userRole === "vendedor") {
-                    const held = uLeads.filter(l => l.closer_id === u.id && l.status === "Reunião Realizada").length;
-                    const proposals = uLeads.filter(l => l.closer_id === u.id && l.status === "Proposta Enviada").length;
-                    const wins = uLeads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").length;
-                    
-                    msg += `  ↳ ✅ Reuniões Feitas: ${held}\n`;
-                    msg += `  ↳ 📄 Propostas: ${proposals}\n`;
-                    msg += `  ↳ 💰 Ganhos: ${wins}\n`;
-                }
-                msg += `\n`;
+            if (userRole === "sdr" || userRole === "vendedor") {
+                const scheduled = uLeads.filter(l => l.sdr_id === u.id && (l.status || "").trim() === "Reunião Agendada").length;
+                msg += `  ↳ 📅 Agendamentos (Semana): ${scheduled}\n`;
             }
+
+            if (userRole === "closer" || userRole === "vendedor") {
+                const held = uLeads.filter(l => l.closer_id === u.id && (l.status || "").trim() === "Reunião Realizada").length;
+                const proposals = uLeads.filter(l => l.closer_id === u.id && (l.status || "").trim() === "Proposta Enviada").length;
+                const wins = uLeads.filter(l => l.closer_id === u.id && (l.status || "").trim() === "Fechado - Ganho").length;
+
+                msg += `  ↳ ✅ Reuniões Feitas (Semana): ${held}\n`;
+                msg += `  ↳ 📄 Propostas (Semana): ${proposals}\n`;
+                msg += `  ↳ 💰 Ganhos (Semana): ${wins}\n`;
+            }
+            msg += `\n`;
         });
 
         msg += `🚀 _Salles Command - Voando baixo!_`;
