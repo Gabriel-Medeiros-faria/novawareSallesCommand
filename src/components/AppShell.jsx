@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLeads } from "../hooks/useLeads";
 import { useGoals } from "../hooks/useGoals";
+import { useStages } from "../hooks/useStages";
 import { Avatar, RoleBadge, Spinner } from "../components/ui/Atoms";
 import { DashboardPage } from "../pages/DashboardPage";
 import { PipelinePage } from "../pages/PipelinePage";
@@ -14,12 +15,15 @@ import { NewLeadModal } from "../components/modals/NewLeadModal";
 
 export function AppShell() {
   const { profile, signOut } = useAuth();
+  const stagesData = useStages();
   const [page, setPage] = useState("dashboard");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { leads, allUsers, loading, updateLead, createLead, refreshLeads } = useLeads(profile);
+  const { leads, allUsers, loading: leadsLoading, updateLead, createLead, refreshLeads } = useLeads(profile, stagesData);
   const { goals, createGoal, updateGoal, deleteGoal } = useGoals(profile);
+
+  const loading = leadsLoading || stagesData.loading;
 
   useEffect(() => {
     const handleKeys = (e) => {
@@ -35,6 +39,7 @@ export function AppShell() {
     { id: "dashboard", label: "DASHBOARD", icon: "◈" },
     ...(["admin", "sdr"].includes(profile?.role) ? [{ id: "sdr_pipeline", label: "PIPELINE SDR", icon: "⟫" }] : []),
     ...(["admin", "closer"].includes(profile?.role) ? [{ id: "closer_pipeline", label: "PIPELINE CLOSER", icon: "⟫" }] : []),
+    ...(["admin", "vendedor"].includes(profile?.role) ? [{ id: "sales_pipeline", label: "PIPELINE VENDAS", icon: "⟫" }] : []),
     { id: "leads", label: "LEADS", icon: "⊞" },
     { id: "goals", label: "METAS", icon: "◎" },
     { id: "copilot", label: "COPILOT AI", icon: "✦", accent: true },
@@ -125,10 +130,11 @@ export function AppShell() {
             display: "flex",
             flexDirection: "column"
           }}>
-            {page === "dashboard" && <DashboardPage leads={leads} goals={goals} profile={profile} allUsers={allUsers} />}
-            {page === "sdr_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="sdr" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} />}
-            {page === "closer_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="closer" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} />}
-            {page === "leads" && <LeadsPage leads={leads} onOpen={setSelectedLead} allUsers={allUsers} />}
+            {page === "dashboard" && <DashboardPage leads={leads} goals={goals} profile={profile} allUsers={allUsers} stagesData={stagesData} />}
+            {page === "sdr_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="sdr" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} stagesData={stagesData} />}
+            {page === "closer_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="closer" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} stagesData={stagesData} />}
+            {page === "sales_pipeline" && <PipelinePage leads={leads} updateLead={updateLead} pipelineType="sales" onOpen={setSelectedLead} allUsers={allUsers} profile={profile} stagesData={stagesData} />}
+            {page === "leads" && <LeadsPage leads={leads} onOpen={setSelectedLead} allUsers={allUsers} stagesData={stagesData} />}
             {page === "goals" && <GoalsPage goals={goals} createGoal={createGoal} updateGoal={updateGoal} deleteGoal={deleteGoal} profile={profile} allUsers={allUsers} />}
             {page === "copilot" && <CopilotPage leads={leads} profile={profile} />}
             {page === "users" && profile?.role === "admin" && <UsersPage allUsers={allUsers} onUserCreated={refreshLeads} />}
@@ -136,8 +142,8 @@ export function AppShell() {
         </div>
       </div>
 
-      <LeadDrawer open={!!selectedLead} onClose={() => setSelectedLead(null)} lead={selectedLead} onSave={async (id, u) => { await updateLead(id, u); setSelectedLead(null); }} profile={profile} allUsers={allUsers} />
-      {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} onCreate={createLead} profile={profile} allUsers={allUsers} />}
+      <LeadDrawer open={!!selectedLead} onClose={() => setSelectedLead(null)} lead={selectedLead} onSave={async (id, u) => { await updateLead(id, u); setSelectedLead(null); }} profile={profile} allUsers={allUsers} stagesData={stagesData} />
+      {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} onCreate={createLead} profile={profile} allUsers={allUsers} stagesData={stagesData} />}
     </div>
   );
 }

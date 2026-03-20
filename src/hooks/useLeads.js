@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import supabase from "../lib/supabase";
 
-export function useLeads(profile) {
+export function useLeads(profile, { handoffStages = [], stagesLoading = false } = {}) {
   const [leads, setLeads] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,16 +12,14 @@ export function useLeads(profile) {
   }, []);
 
   const fetchLeads = useCallback(async () => {
-    if (!profile) return;
+    if (!profile || stagesLoading) return;
     setLoading(true);
     let query = supabase.from("leads").select("*");
     
-    // Implement Isolation: 
-    // Admins see all. SDRs see their own. Closers see their own.
     if (profile.role === "sdr") {
       query = query.eq("sdr_id", profile.id);
-    } else if (profile.role?.toLowerCase() === "closer") {
-      // Custom wrapper doesn't support .or(), filter client-side instead
+    } else if (profile.role === "vendedor") {
+      query = query.or(`sdr_id.eq.${profile.id},closer_id.eq.${profile.id}`);
     }
 
     const { data, error } = await query.order("created_at", { ascending: false });
@@ -29,8 +27,6 @@ export function useLeads(profile) {
     
     if (data) {
       if (profile.role?.toLowerCase() === "closer") {
-        // Refine client-side: Keep my leads OR unclaimed leads in the handoff stages
-        const handoffStages = ["Follow-up", "Reunião Agendada"];
         const filtered = data.filter(l => 
           l.closer_id === profile.id || 
           (handoffStages.includes(l.status) && !l.closer_id)
@@ -41,7 +37,7 @@ export function useLeads(profile) {
       }
     }
     setLoading(false);
-  }, [profile]);
+  }, [profile, handoffStages, stagesLoading]);
 
   useEffect(() => {
     if (profile) {
@@ -54,7 +50,7 @@ export function useLeads(profile) {
     let payload = { ...updates, last_interaction: new Date().toISOString().split("T")[0] };
     
     // Auto-claiming logic for updates (e.g., column move)
-    if (profile?.role?.toLowerCase() === "closer") {
+    if (["closer", "vendedor"].includes(profile?.role?.toLowerCase())) {
       const currentLead = leads.find(l => l.id === id);
       if (currentLead && !currentLead.closer_id) {
         payload.closer_id = profile.id;

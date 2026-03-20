@@ -22,6 +22,7 @@ export function LoginPage() {
     <div style={{ minHeight: "100vh", background: "#030712", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Sora','DM Sans',system-ui,sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+        html, body { margin: 0; padding: 0; background: #030712; }
         *{box-sizing:border-box}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

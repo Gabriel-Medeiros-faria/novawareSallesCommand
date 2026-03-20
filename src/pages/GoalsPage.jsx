@@ -7,7 +7,14 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
   const [editingGoal, setEditingGoal] = useState(null);
   const [newGoal, setNewGoal] = useState({ user_id: "", type: "leads_qualificados", target: "", period: "mensal", month: new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) });
   const [saving, setSaving] = useState(false);
-  const visibleUsers = profile?.role === "admin" ? allUsers.filter(u => u.role !== "admin") : [profile].filter(Boolean);
+  
+  // New States
+  const [viewMode, setViewMode] = useState("cards"); // cards | table
+  const [userFilter, setUserFilter] = useState("all");
+
+  const adminUsers = allUsers.filter(u => u.role !== "admin");
+  const visibleUsers = (profile?.role === "admin" ? adminUsers : [profile].filter(Boolean))
+    .filter(u => userFilter === "all" || u.id === userFilter);
 
   const handleOpenAdd = () => {
     setEditingGoal(null);
@@ -46,13 +53,88 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
           <h1 style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9", margin: "0 0 8px", letterSpacing: "-1px", textTransform: "uppercase" }}>GESTÃO DE METAS</h1>
           <div style={{ fontSize: 13, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>PERFORMANCE E MÉTRICAS TÁTICAS DA EQUIPE</div>
         </div>
-        {profile?.role === "admin" && <button onClick={handleOpenAdd} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "12px 24px", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>+ DEFINIR NOVA META</button>}
+        <div style={{ display: "flex", gap: 12 }}>
+          {profile?.role === "admin" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", padding: "4px 12px", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 2 }}>
+              <span style={{ fontSize: 10, fontWeight: 900, color: "#475569", textTransform: "uppercase" }}>Filtrar por:</span>
+              <select value={userFilter} onChange={e => setUserFilter(e.target.value)} style={{ background: "transparent", border: "none", color: "#f1f5f9", fontSize: 12, fontWeight: 800, cursor: "pointer", outline: "none", padding: "4px 0" }}>
+                <option value="all">TODOS OS COLABORADORES</option>
+                {adminUsers.map(u => <option key={u.id} value={u.id}>{u.name.toUpperCase()}</option>)}
+              </select>
+            </div>
+          )}
+          
+          <div style={{ display: "flex", background: "rgba(255,255,255,0.03)", padding: 4, borderRadius: 2, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <button onClick={() => setViewMode("cards")} style={{ background: viewMode === "cards" ? "#6366f1" : "transparent", border: "none", color: viewMode === "cards" ? "#fff" : "#475569", padding: "6px 12px", borderRadius: 2, cursor: "pointer", fontSize: 10, fontWeight: 900, textTransform: "uppercase" }}>Cards</button>
+            <button onClick={() => setViewMode("table")} style={{ background: viewMode === "table" ? "#6366f1" : "transparent", border: "none", color: viewMode === "table" ? "#fff" : "#475569", padding: "6px 12px", borderRadius: 2, cursor: "pointer", fontSize: 10, fontWeight: 900, textTransform: "uppercase" }}>Tabela</button>
+          </div>
+
+          {profile?.role === "admin" && <button onClick={handleOpenAdd} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "12px 24px", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>+ DEFINIR NOVA META</button>}
+        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {visibleUsers.length === 0 && <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 2, padding: 60, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>NENHUM ATIVO NO SISTEMA</div>}
+        {visibleUsers.length === 0 && <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 2, padding: 60, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>NENHUM ATIVO NO SISTEMA COM ESTE FILTRO</div>}
 
-        {visibleUsers.map(user => {
+        {viewMode === "table" && visibleUsers.length > 0 && (
+          <div style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 2, overflow: "hidden" }}>
+             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                <thead>
+                  <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Colaborador</th>
+                    <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Indicador</th>
+                    <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Período</th>
+                    <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Meta</th>
+                    <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Progresso</th>
+                    <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ref.</th>
+                    {profile?.role === "admin" && <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right" }}>Ações</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleUsers.flatMap(user => goals.filter(g => g.user_id === user.id).map(g => {
+                    const pct = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
+                    return (
+                      <tr key={g.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.02)", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.01)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <Avatar name={user.name || "?"} size={28} />
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>{(user.name || "N/A").toUpperCase()}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px 24px", fontSize: 12, fontWeight: 800, color: "#94a3b8" }}>{goalLabel(g.type).toUpperCase()}</td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <Badge color={periodColor(g.period)} bg={`${periodColor(g.period)}08`}>{periodLabel(g.period).toUpperCase()}</Badge>
+                        </td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#f1f5f9" }}>{g.type === "valor_vendido" ? fmt(g.target) : g.target}</div>
+                          <div style={{ fontSize: 10, color: "#475569", fontWeight: 800 }}>ATUAL: {g.type === "valor_vendido" ? fmt(g.current) : g.current}</div>
+                        </td>
+                        <td style={{ padding: "16px 24px", width: 140 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.04)", borderRadius: 0, overflow: "hidden" }}>
+                              <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#2dd4bf" : pct >= 60 ? "#fbbf24" : "#6366f1" }} />
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 900, color: pct >= 100 ? "#2dd4bf" : "#475569" }}>{pct}%</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px 24px", fontSize: 11, fontWeight: 800, color: "#1e293b" }}>{g.month.toUpperCase()}</td>
+                        {profile?.role === "admin" && (
+                          <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                              <button onClick={() => handleOpenEdit(g)} style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", color: "#6366f1", borderRadius: 2, padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 900 }}>EDITAR</button>
+                              <button onClick={() => handleDelete(g.id)} style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", borderRadius: 2, padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 900 }}>EXCLUIR</button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  }))}
+                </tbody>
+             </table>
+          </div>
+        )}
+
+        {viewMode === "cards" && visibleUsers.map(user => {
           const userGoals = goals.filter(g => g.user_id === user.id);
           return (
             <div key={user.id} style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 2, padding: 32 }}>

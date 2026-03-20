@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { LeadCard } from "./LeadCard";
-import { stageColor, fmt } from "../../utils/constants";
+import { useStages } from "../../hooks/useStages";
+import { fmt } from "../../utils/constants";
 
 export function KanbanCol({ stage, leads, onOpen, onDrop, allUsers }) {
+  const { getStageColor } = useStages();
   const [over, setOver] = useState(false);
   const total = leads.reduce((s, l) => s + (l.deal_value || 0), 0);
   
   return (
     <div onDrop={e => { e.preventDefault(); onDrop(e.dataTransfer.getData("leadId"), stage); setOver(false); }} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
-      style={{ minWidth: 320, maxWidth: 320, flexShrink: 0, background: over ? "rgba(99,102,241,0.03)" : "rgba(255,255,255,0.012)", borderTop: `2px solid ${stageColor(stage)}33`, borderLeft: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)", borderRadius: 2, padding: 16, transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)", display: "flex", flexDirection: "column", height: "100%", maxHeight: "calc(100vh - 240px)" }}
+      style={{ minWidth: 320, maxWidth: 320, flexShrink: 0, background: over ? "rgba(99,102,241,0.03)" : "rgba(255,255,255,0.012)", borderTop: `2px solid ${getStageColor(stage)}33`, borderLeft: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)", borderRadius: 2, padding: 16, transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)", display: "flex", flexDirection: "column", height: "100%", maxHeight: "calc(100vh - 240px)" }}
     >
       <div style={{ marginBottom: 20, borderBottom: "1px solid rgba(255,255,255,0.03)", paddingBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>

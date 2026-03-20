@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { Spinner, Badge, Avatar } from "../ui/Atoms";
 import { useActivities } from "../../hooks/useActivities";
-import { ALL_STAGES, stageColor, fmt, actIcon, INP } from "../../utils/constants";
+import { fmt, actIcon, INP } from "../../utils/constants";
 
-export function LeadModal({ lead, onClose, onSave, profile, allUsers }) {
+export function LeadModal({ lead, onClose, onSave, profile, allUsers, stagesData }) {
   const { activities, loading: actLoad, addActivity } = useActivities(lead.id);
+  const { allStages = [], getStageColor = () => "#64748b", loading: stageLoad = false } = stagesData || {};
   const [form, setForm] = useState({ ...lead });
   const [newAct, setNewAct] = useState("");
   const [actType, setActType] = useState("email");
   const [saving, setSaving] = useState(false);
   
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const sdrs = allUsers.filter(u => u.role === "sdr");
-  const closers = allUsers.filter(u => u.role === "closer");
+  const sdrs = allUsers.filter(u => u.role === "sdr" || u.role === "vendedor");
+  const closers = allUsers.filter(u => u.role === "closer" || u.role === "vendedor");
   const canEdit = profile?.role === "admin" || profile?.id === lead.sdr_id || profile?.id === lead.closer_id;
 
   const handleSave = async () => {
@@ -34,7 +35,9 @@ export function LeadModal({ lead, onClose, onSave, profile, allUsers }) {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <h2 style={{ fontSize: 17, fontWeight: 800, color: "#f1f5f9", margin: 0 }}>{lead.nome_lead}</h2>
-              <Badge color={stageColor(lead.status)} bg={`${stageColor(lead.status)}18`}>{lead.status}</Badge>
+              {stageLoad ? <Spinner size={14} /> : (
+                <Badge color={getStageColor(lead.status)} bg={`${getStageColor(lead.status)}18`}>{lead.status}</Badge>
+              )}
             </div>
             <p style={{ fontSize: 12, color: "#334155", margin: "3px 0 0" }}>{lead.empresa}</p>
           </div>
@@ -47,7 +50,7 @@ export function LeadModal({ lead, onClose, onSave, profile, allUsers }) {
               {[["Nome", "nome_lead", "text"], ["Empresa", "empresa", "text"], ["Telefone", "telefone", "text"], ["Email", "email", "email"], ["Valor", "deal_value", "number"], ["Reunião", "meeting_date", "date"]].map(([l, k, t]) => (
                 <div key={k}><label style={{ display: "block", fontSize: 11, color: "#334155", marginBottom: 3 }}>{l}</label><input type={t} value={form[k] || ""} onChange={set(k)} style={INP} /></div>
               ))}
-              {[["Temperatura", "temperatura", ["Quente", "Morno", "Frio"]], ["Qualidade", "qualidade", ["Alta", "Média", "Baixa"]], ["Status", "status", ALL_STAGES]].map(([l, k, opts]) => (
+              {[["Temperatura", "temperatura", ["Quente", "Morno", "Frio"]], ["Qualidade", "qualidade", ["Alta", "Média", "Baixa"]], ["Status", "status", allStages]].map(([l, k, opts]) => (
                 <div key={k}><label style={{ display: "block", fontSize: 11, color: "#334155", marginBottom: 3 }}>{l}</label><select value={form[k] || ""} onChange={set(k)} style={INP}>{opts.map(o => <option key={o}>{o}</option>)}</select></div>
               ))}
               {profile?.role === "admin" && (

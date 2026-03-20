@@ -1,22 +1,12 @@
 import { useState, useEffect } from "react";
-import { SDR_STAGES, CLOSER_STAGES } from "../utils/constants";
 import { KanbanCol } from "../components/kanban/KanbanCol";
+import { Spinner } from "../components/ui/Atoms";
 
-export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers, profile }) {
+export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers, profile, stagesData }) {
   const [userFilter, setUserFilter] = useState("all");
-  const stages = pipelineType === "sdr" ? SDR_STAGES : CLOSER_STAGES;
+  const { sdrStages, closerStages, loading } = stagesData || { sdrStages: [], closerStages: [], loading: true };
   
-  const filteredLeads = leads.filter(l => {
-    if (userFilter === "all") return true;
-    return pipelineType === "sdr" ? l.sdr_id === userFilter : l.closer_id === userFilter;
-  });
-
-  const visibleLeads = s => filteredLeads.filter(l => l.status === s);
-  const handleDrop = async (id, stage) => { if (id) await updateLead(id, { status: stage }); };
-
-  const selectableUsers = allUsers.filter(u => u.role === pipelineType);
-
-  // Drag-to-scroll logic
+  // Drag-to-scroll logic hooks
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -46,6 +36,28 @@ export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers
     };
   }, [isDragging, startX, scrollLeft]);
 
+  if (loading) return (
+    <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Spinner size={46} />
+    </div>
+  );
+
+  const stages = (pipelineType === "sdr" ? sdrStages : pipelineType === "closer" ? closerStages : [...sdrStages, ...closerStages]).map(s => s.name);
+  
+  const filteredLeads = leads.filter(l => {
+    if (userFilter === "all") return true;
+    if (pipelineType === "sales") return l.sdr_id === userFilter || l.closer_id === userFilter;
+    return pipelineType === "sdr" ? l.sdr_id === userFilter : l.closer_id === userFilter;
+  });
+
+  const visibleLeads = s => filteredLeads.filter(l => l.status === s);
+  const handleDrop = async (id, stage) => { if (id) await updateLead(id, { status: stage }); };
+
+  const selectableUsers = allUsers.filter(u => {
+    if (pipelineType === "sales") return u.role === "vendedor";
+    return u.role === pipelineType;
+  });
+
   const onMouseDown = (e) => {
     if (e.target.closest('.kanban-card') || e.target.closest('button')) return;
     setIsDragging(true);
@@ -72,10 +84,10 @@ export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9", margin: "0 0 8px", letterSpacing: "-1px", textTransform: "uppercase" }}>PIPELINE {pipelineType}</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9", margin: "0 0 8px", letterSpacing: "-1px", textTransform: "uppercase" }}>PIPELINE {pipelineType === "sales" ? "DE VENDAS" : pipelineType}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ fontSize: 13, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                {pipelineType === "sdr" ? "QUALIFICAÇÃO TÁTICA" : "FECHAMENTO ESTRATÉGICO"}
+                {pipelineType === "sdr" ? "QUALIFICAÇÃO TÁTICA" : pipelineType === "closer" ? "FECHAMENTO ESTRATÉGICO" : "FLUXO COMPLETO DE VENDAS"}
             </div>
             <div style={{ width: 1, height: 12, background: "rgba(255,255,255,0.1)" }} />
             <div style={{ fontSize: 13, color: "#6366f1", fontWeight: 900 }}>{filteredLeads.length} LEADS ATIVOS</div>
@@ -84,7 +96,7 @@ export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers
 
         {profile?.role === "admin" && (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 10, fontWeight: 900, color: "#475569", textTransform: "uppercase" }}>Filtrar por {pipelineType === "sdr" ? "SDR" : "Closer"}:</span>
+            <span style={{ fontSize: 10, fontWeight: 900, color: "#475569", textTransform: "uppercase" }}>Filtrar por {pipelineType === "sdr" ? "SDR" : pipelineType === "closer" ? "Closer" : "Vendedor"}:</span>
             <select 
               value={userFilter} 
               onChange={e => setUserFilter(e.target.value)}

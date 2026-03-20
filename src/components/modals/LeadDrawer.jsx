@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { Spinner, Badge, Avatar, Drawer, Field } from "../ui/Atoms";
 import { useActivities } from "../../hooks/useActivities";
-import { ALL_STAGES, stageColor, fmt, actIcon, INP } from "../../utils/constants";
+import { fmt, actIcon, INP } from "../../utils/constants";
 
-export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers }) {
+export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers, stagesData }) {
   if (!lead) return null;
   
   const { activities, loading: actLoad, addActivity } = useActivities(lead.id);
+  const { allStages = [], getStageColor = () => "#64748b", loading: stageLoad = false } = stagesData || {};
   const [form, setForm] = useState({ ...lead });
   const [newAct, setNewAct] = useState("");
   const [actType, setActType] = useState("email");
   const [saving, setSaving] = useState(false);
   
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const sdrs = allUsers.filter(u => u.role === "sdr");
-  const closers = allUsers.filter(u => u.role === "closer");
+  const sdrs = allUsers.filter(u => u.role === "sdr" || u.role === "vendedor");
+  const closers = allUsers.filter(u => u.role === "closer" || u.role === "vendedor");
   const canEdit = profile?.role === "admin" || profile?.id === lead.sdr_id || profile?.id === lead.closer_id;
 
   const handleSave = async () => {
@@ -37,11 +38,15 @@ export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers }) {
         
         {/* Header/Status Info */}
         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", padding: 16, borderRadius: 2 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <span style={{ fontSize: 10, color: "#475569", fontWeight: 800 }}>STATUS ATUAL</span>
-                <Badge color={stageColor(lead.status)} bg={`${stageColor(lead.status)}05`} border={`1px solid ${stageColor(lead.status)}33`}>{lead.status}</Badge>
-            </div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#f1f5f9", letterSpacing: "-1px" }}>{fmt(lead.deal_value)}</div>
+            {stageLoad ? <Spinner size={20} /> : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontSize: 10, color: "#475569", fontWeight: 800 }}>STATUS ATUAL</span>
+                    <Badge color={getStageColor(lead.status)} bg={`${getStageColor(lead.status)}05`} border={`1px solid ${getStageColor(lead.status)}33`}>{lead.status}</Badge>
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#f1f5f9", letterSpacing: "-1px" }}>{fmt(lead.deal_value)}</div>
+              </>
+            )}
         </div>
 
         {/* Lead Information */}
@@ -73,7 +78,7 @@ export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers }) {
               <div style={{ gridColumn: "1/-1" }}>
                 <Field label="Status Etapa">
                     <select value={form.status || ""} onChange={set("status")} style={INP}>
-                    {ALL_STAGES.map(o => <option key={o}>{o}</option>)}
+                    {allStages.map(o => <option key={o}>{o}</option>)}
                     </select>
                 </Field>
               </div>

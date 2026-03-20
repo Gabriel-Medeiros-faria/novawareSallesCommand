@@ -2,15 +2,18 @@ import { useState } from "react";
 import { Spinner, Drawer, Field } from "../ui/Atoms";
 import { INP } from "../../utils/constants";
 
-export function NewLeadModal({ onClose, onCreate, profile, allUsers }) {
-  const sdrs = allUsers.filter(u => u.role === "sdr");
-  const closers = allUsers.filter(u => u.role === "closer");
+export function NewLeadModal({ onClose, onCreate, profile, allUsers, stagesData }) {
+  const { sdrStages = [] } = stagesData || {};
+  const sdrs = allUsers.filter(u => u.role === "sdr" || u.role === "vendedor");
+  const closers = allUsers.filter(u => u.role === "closer" || u.role === "vendedor");
   
   const [form, setForm] = useState({ 
     nome_lead: "", empresa: "", telefone: "", email: "", 
     origem_lead: "LinkedIn", temperatura: "Morno", qualidade: "Média", 
-    observacoes: "", sdr_id: profile?.role === "sdr" ? profile.id : (sdrs[0]?.id || ""), 
-    closer_id: "", deal_value: "" 
+    observacoes: "", 
+    sdr_id: ["sdr", "vendedor"].includes(profile?.role) ? profile.id : (sdrs[0]?.id || ""), 
+    closer_id: profile?.role === "vendedor" ? profile.id : "", 
+    deal_value: "" 
   });
   
   const [loading, setLoading] = useState(false);
@@ -24,13 +27,18 @@ export function NewLeadModal({ onClose, onCreate, profile, allUsers }) {
     setLoading(true);
     
     const finalForm = { ...form };
-    // Force assignment based on role if not admin
     if (profile?.role === "sdr") finalForm.sdr_id = profile.id;
+    if (profile?.role === "vendedor") {
+      finalForm.sdr_id = profile.id;
+      finalForm.closer_id = profile.id;
+    }
     if (profile?.role === "closer") finalForm.closer_id = profile.id;
+
+    const defaultStatus = sdrStages[0]?.name || "Novo Lead";
 
     const { error } = await onCreate({ 
         ...finalForm, deal_value: Number(finalForm.deal_value) || 0, 
-        sdr_id: finalForm.sdr_id || null, closer_id: finalForm.closer_id || null, status: "Novo Lead" 
+        sdr_id: finalForm.sdr_id || null, closer_id: finalForm.closer_id || null, status: defaultStatus
     });
     if (error) {
       setError(error.message); setLoading(false);

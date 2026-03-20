@@ -1,7 +1,16 @@
-import { RoleBadge, MetricCard, Avatar, Badge } from "../components/ui/Atoms";
-import { fmt, CLOSER_STAGES, stageColor } from "../utils/constants";
+import { RoleBadge, MetricCard, Avatar, Badge, Spinner } from "../components/ui/Atoms";
+import { fmt } from "../utils/constants";
 
-export function DashboardPage({ leads, goals, profile, allUsers }) {
+export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
+  const { closerStages = [], getStageColor = () => "#6b7280", loading = false } = stagesData || {};
+
+  if (loading) return (
+    <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", padding: 100 }}>
+      <Spinner size={40} />
+    </div>
+  );
+
+  const closerStageNames = closerStages.map(s => s.name);
   const total = leads.length;
   const ganhos = leads.filter(l => l.status === "Fechado - Ganho");
   const receita = ganhos.reduce((s, l) => s + (l.deal_value || 0), 0);
@@ -35,7 +44,7 @@ export function DashboardPage({ leads, goals, profile, allUsers }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 16, marginBottom: 32 }}>
         <MetricCard label="Total Leads" value={total} icon="👥" color="#6366f1" sub={`${leads.filter(l => l.status === "Novo Lead").length} NOVOS HOJE`} />
-        <MetricCard label="Em Pipeline" value={leads.filter(l => CLOSER_STAGES.includes(l.status)).length} icon="📅" color="#06b6d4" />
+        <MetricCard label="Em Pipeline" value={leads.filter(l => closerStageNames.includes(l.status)).length} icon="📅" color="#06b6d4" />
         <MetricCard label="Ganhos" value={ganhos.length} icon="🏆" color="#22c55e" sub={`${leads.filter(l => l.status === "Fechado - Perdido").length} PERDIDOS`} />
         <MetricCard label="Receita" value={fmt(receita)} icon="💰" color="#10b981" />
         <MetricCard label="Pipeline" value={fmt(pipeline)} icon="📊" color="#f59e0b" />
@@ -63,13 +72,19 @@ export function DashboardPage({ leads, goals, profile, allUsers }) {
             {[{
               title: "EQUIPE SDR", users: allUsers.filter(u => u.role === "sdr"), getStats: u => ({
                 a: `${leads.filter(l => l.sdr_id === u.id).length} LEADS`,
-                b: `${leads.filter(l => l.sdr_id === u.id && CLOSER_STAGES.includes(l.status)).length} QUALIF`
+                b: `${leads.filter(l => l.sdr_id === u.id && closerStageNames.includes(l.status)).length} QUALIF`
               })
             },
             {
               title: "EQUIPE CLOSER", users: allUsers.filter(u => u.role === "closer"), getStats: u => ({
                 a: `${leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").length} GANHOS`,
                 b: fmt(leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").reduce((s, l) => s + (l.deal_value || 0), 0))
+              })
+            },
+            {
+              title: "EQUIPE DE VENDAS", users: allUsers.filter(u => u.role === "vendedor"), getStats: u => ({
+                a: `${leads.filter(l => l.sdr_id === u.id).length} LEADS`,
+                b: `${leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").length} GANHOS`
               })
             }
             ].map(g => (
@@ -103,7 +118,7 @@ export function DashboardPage({ leads, goals, profile, allUsers }) {
                     <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 900, textTransform: "uppercase" }}>{l.nome_lead}</div>
                     <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", marginTop: 2 }}>{l.empresa}</div>
                   </div>
-                  <Badge color={stageColor(l.status)} bg={`${stageColor(l.status)}15`}>{l.status}</Badge>
+                  <Badge color={getStageColor(l.status)} bg={`${getStageColor(l.status)}15`}>{l.status}</Badge>
                 </div>
               ))}
             </div>

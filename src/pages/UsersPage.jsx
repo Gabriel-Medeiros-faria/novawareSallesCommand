@@ -37,7 +37,7 @@ export function UsersPage({ allUsers, onUserCreated }) {
       
       const rpcName = editingUser ? "update_user_by_admin" : "create_user_by_admin";
       const payload = editingUser 
-        ? { p_user_id: editingUser.id, p_name: form.name, p_role: form.role, p_password: form.password || null }
+        ? { p_user_id: editingUser.id, p_name: form.name, p_email: form.email, p_role: form.role, p_password: form.password || null }
         : { p_email: form.email, p_password: form.password, p_name: form.name, p_role: form.role };
 
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpcName}`, {
@@ -86,6 +86,7 @@ export function UsersPage({ allUsers, onUserCreated }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
         {[
             { role: "admin", title: "ADMINISTRADORES", icon: "⚡" },
+            { role: "vendedor", title: "VENDEDORES (GERAL)", icon: "⚒" },
             { role: "sdr", title: "SDRs (PROSPECÇÃO)", icon: "📡" },
             { role: "closer", title: "CLOSERS (FECHAMENTO)", icon: "🎯" },
         ].map(section => {
@@ -106,12 +107,12 @@ export function UsersPage({ allUsers, onUserCreated }) {
                     <div key={u.id} style={{ background: "rgba(255,255,255,0.015)", borderRadius: 2, padding: "20px 24px 20px 20px", display: "flex", alignItems: "center", gap: 20, border: "1px solid rgba(255,255,255,0.04)", transition: "all 0.2s" }}
                          onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.2)"}
                          onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)"}>
-                        <Avatar name={u.name} size={40} />
+                        <Avatar name={u.name} size={40} style={{ flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 900, color: "#f1f5f9", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "0.02em" }}>{u.name}</div>
-                            <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", marginTop: 4, letterSpacing: "0.05em" }}>{u.email}</div>
+                            <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", marginTop: 4, letterSpacing: "0.05em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.email}</div>
                         </div>
-                        <button onClick={() => openEdit(u)} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#6366f1", borderRadius: 2, width: 36, height: 36, cursor: "pointer", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
+                        <button onClick={() => openEdit(u)} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#6366f1", borderRadius: 2, width: 36, height: 36, cursor: "pointer", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✎</button>
                     </div>
                     ))}
                 </div>
@@ -126,12 +127,12 @@ export function UsersPage({ allUsers, onUserCreated }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <Field label="Nome Completo"><input type="text" value={form.name} onChange={set("name")} style={{ ...INP, padding: "12px 14px" }} /></Field>
-                <Field label="E-mail Operacional"><input type="email" value={form.email} onChange={set("email")} style={{ ...INP, padding: "12px 14px" }} disabled={!!editingUser} /></Field>
+                <Field label="E-mail Operacional"><input type="email" value={form.email} onChange={set("email")} style={{ ...INP, padding: "12px 14px" }} /></Field>
                 <Field label={editingUser ? "Redefinir Senha (opcional)" : "Senha de Acesso"}><input type="password" value={form.password} onChange={set("password")} style={{ ...INP, padding: "12px 14px" }} /></Field>
                 
                 <Field label="Cargo / Nível de Acesso">
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                    {[{ v: "sdr", l: "SDR" }, { v: "closer", l: "CLOSER" }, { v: "admin", l: "ADMIN" }].map(o => (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {[{ v: "sdr", l: "SDR" }, { v: "closer", l: "CLOSER" }, { v: "vendedor", l: "VENDEDOR" }, { v: "admin", l: "ADMIN" }].map(o => (
                         <button key={o.v} onClick={() => setForm(p => ({ ...p, role: o.v }))} style={{ padding: "14px 10px", borderRadius: 2, border: `1px solid ${form.role === o.v ? "#6366f1" : "rgba(255,255,255,0.08)"}`, background: form.role === o.v ? "rgba(99,102,241,0.05)" : "transparent", color: form.role === o.v ? "#f1f5f9" : "#475569", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.05em" }}>{o.l}</button>
                     ))}
                     </div>

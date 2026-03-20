@@ -8,7 +8,10 @@ function AppContent() {
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#030712", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14, fontFamily: "'Sora',system-ui,sans-serif" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        html, body { margin: 0; padding: 0; background: #030712; }
+        @keyframes spin{to{transform:rotate(360deg)}}
+      `}</style>
       <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚡</div>
       <Spinner size={26} />
       <span style={{ fontSize: 12, color: "#1e293b" }}>Carregando...</span>

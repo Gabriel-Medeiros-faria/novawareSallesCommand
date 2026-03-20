@@ -14,7 +14,7 @@ export function Badge({ children, color, bg, border }) {
 }
 
 export function RoleBadge({ role }) {
-  const m = { admin: ["#fbbf24", "rgba(251,191,36,0.07)", "Admin"], sdr: ["#818cf8", "rgba(129,140,248,0.07)", "SDR"], closer: ["#2dd4bf", "rgba(45,212,191,0.07)", "Closer"] };
+  const m = { admin: ["#fbbf24", "rgba(251,191,36,0.07)", "Admin"], sdr: ["#818cf8", "rgba(129,140,248,0.07)", "SDR"], closer: ["#2dd4bf", "rgba(45,212,191,0.07)", "Closer"], vendedor: ["#a855f7", "rgba(168,85,247,0.07)", "Vendedor"] };
   const [c, bg, l] = m[role] || ["#64748b", "rgba(100,116,139,0.07)", role];
   return <Badge color={c} bg={bg}>{l}</Badge>;
 }
