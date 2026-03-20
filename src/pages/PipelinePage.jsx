@@ -54,8 +54,9 @@ export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers
   const handleDrop = async (id, stage) => { if (id) await updateLead(id, { status: stage }); };
 
   const selectableUsers = allUsers.filter(u => {
-    if (pipelineType === "sales") return u.role === "vendedor";
-    return u.role === pipelineType;
+    const role = u.role?.toLowerCase();
+    if (pipelineType === "sales") return role === "vendedor";
+    return role === pipelineType;
   });
 
   const onMouseDown = (e) => {
@@ -94,7 +95,7 @@ export function PipelinePage({ leads, updateLead, pipelineType, onOpen, allUsers
           </div>
         </div>
 
-        {profile?.role === "admin" && (
+        {profile?.role?.toLowerCase() === "admin" && (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 10, fontWeight: 900, color: "#475569", textTransform: "uppercase" }}>Filtrar por {pipelineType === "sdr" ? "SDR" : pipelineType === "closer" ? "Closer" : "Vendedor"}:</span>
             <select 

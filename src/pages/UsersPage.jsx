@@ -65,7 +65,7 @@ export function UsersPage({ allUsers, onUserCreated }) {
     setLoading(false);
   };
 
-  const byRole = role => allUsers.filter(u => u.role === role).sort((a, b) => a.name.localeCompare(b.name));
+  const byRole = role => allUsers.filter(u => u.role?.toLowerCase() === role).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div style={{ height: "100%", paddingBottom: 40 }}>

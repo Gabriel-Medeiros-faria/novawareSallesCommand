@@ -14,9 +14,10 @@ export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers, sta
   const [saving, setSaving] = useState(false);
   
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const sdrs = allUsers.filter(u => u.role === "sdr" || u.role === "vendedor");
-  const closers = allUsers.filter(u => u.role === "closer" || u.role === "vendedor");
-  const canEdit = profile?.role === "admin" || profile?.id === lead.sdr_id || profile?.id === lead.closer_id;
+  const sdrs = allUsers.filter(u => u.role?.toLowerCase() === "sdr" || u.role?.toLowerCase() === "vendedor");
+  const closers = allUsers.filter(u => u.role?.toLowerCase() === "closer" || u.role?.toLowerCase() === "vendedor");
+  const userRole = profile?.role?.toLowerCase();
+  const canEdit = userRole === "admin" || profile?.id === lead.sdr_id || profile?.id === lead.closer_id;
 
   const handleSave = async () => {
     setSaving(true);
@@ -83,7 +84,7 @@ export function LeadDrawer({ open, onClose, lead, onSave, profile, allUsers, sta
                 </Field>
               </div>
 
-              {profile?.role === "admin" && (
+              {userRole === "admin" && (
                 <>
                   <Field label="Responsável SDR">
                     <select value={form.sdr_id || ""} onChange={set("sdr_id")} style={INP}>

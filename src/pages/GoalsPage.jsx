@@ -12,8 +12,9 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
   const [viewMode, setViewMode] = useState("cards"); // cards | table
   const [userFilter, setUserFilter] = useState("all");
 
-  const adminUsers = allUsers.filter(u => u.role !== "admin");
-  const visibleUsers = (profile?.role === "admin" ? adminUsers : [profile].filter(Boolean))
+  const userRole = profile?.role?.toLowerCase();
+  const adminUsers = allUsers.filter(u => u.role?.toLowerCase() !== "admin");
+  const visibleUsers = (userRole === "admin" ? adminUsers : [profile].filter(Boolean))
     .filter(u => userFilter === "all" || u.id === userFilter);
 
   const handleOpenAdd = () => {
@@ -54,7 +55,7 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
           <div style={{ fontSize: 13, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>PERFORMANCE E MÉTRICAS TÁTICAS DA EQUIPE</div>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          {profile?.role === "admin" && (
+          {userRole === "admin" && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", padding: "4px 12px", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 2 }}>
               <span style={{ fontSize: 10, fontWeight: 900, color: "#475569", textTransform: "uppercase" }}>Filtrar por:</span>
               <select value={userFilter} onChange={e => setUserFilter(e.target.value)} style={{ background: "transparent", border: "none", color: "#f1f5f9", fontSize: 12, fontWeight: 800, cursor: "pointer", outline: "none", padding: "4px 0" }}>
@@ -69,7 +70,7 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
             <button onClick={() => setViewMode("table")} style={{ background: viewMode === "table" ? "#6366f1" : "transparent", border: "none", color: viewMode === "table" ? "#fff" : "#475569", padding: "6px 12px", borderRadius: 2, cursor: "pointer", fontSize: 10, fontWeight: 900, textTransform: "uppercase" }}>Tabela</button>
           </div>
 
-          {profile?.role === "admin" && <button onClick={handleOpenAdd} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "12px 24px", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>+ DEFINIR NOVA META</button>}
+          {userRole === "admin" && <button onClick={handleOpenAdd} style={{ background: "#6366f1", border: "none", color: "#fff", borderRadius: 2, padding: "12px 24px", cursor: "pointer", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>+ DEFINIR NOVA META</button>}
         </div>
       </div>
 
@@ -87,7 +88,7 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
                     <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Meta</th>
                     <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Progresso</th>
                     <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ref.</th>
-                    {profile?.role === "admin" && <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right" }}>Ações</th>}
+                    {userRole === "admin" && <th style={{ padding: "16px 24px", fontSize: 11, fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right" }}>Ações</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -118,7 +119,7 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
                           </div>
                         </td>
                         <td style={{ padding: "16px 24px", fontSize: 11, fontWeight: 800, color: "#1e293b" }}>{g.month.toUpperCase()}</td>
-                        {profile?.role === "admin" && (
+                        {userRole === "admin" && (
                           <td style={{ padding: "16px 24px", textAlign: "right" }}>
                             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                               <button onClick={() => handleOpenEdit(g)} style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", color: "#6366f1", borderRadius: 2, padding: "6px 10px", cursor: "pointer", fontSize: 11, fontWeight: 900 }}>EDITAR</button>
@@ -160,7 +161,7 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
                       <div key={g.id} style={{ background: "rgba(3,7,18,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 2, padding: 24, position: "relative" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                            {profile?.role === "admin" && (
+                            {userRole === "admin" && (
                               <div style={{ display: "flex", gap: 6, marginRight: 8 }}>
                                 <button onClick={() => handleOpenEdit(g)} style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", color: "#6366f1", borderRadius: 2, width: 24, height: 24, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
                                 <button onClick={() => handleDelete(g.id)} style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", borderRadius: 2, width: 24, height: 24, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
@@ -198,7 +199,7 @@ export function GoalsPage({ goals, createGoal, updateGoal, deleteGoal, profile, 
                 <Field label="Colaborador Alvo">
                     <select value={newGoal.user_id} onChange={e => setNewGoal(p => ({ ...p, user_id: e.target.value }))} style={{ ...INP, padding: "12px 14px" }} disabled={!!editingGoal}>
                         <option value="">Selecionar estratégico...</option>
-                        {allUsers.filter(u => u.role !== "admin").map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        {allUsers.filter(u => u.role?.toLowerCase() !== "admin").map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                     </select>
                 </Field>
 

@@ -16,9 +16,11 @@ export function useLeads(profile, { handoffStages = [], stagesLoading = false } 
     setLoading(true);
     let query = supabase.from("leads").select("*");
     
-    if (profile.role === "sdr") {
+    const role = profile.role?.toLowerCase();
+    
+    if (role === "sdr") {
       query = query.eq("sdr_id", profile.id);
-    } else if (profile.role === "vendedor") {
+    } else if (role === "vendedor") {
       query = query.or(`sdr_id.eq.${profile.id},closer_id.eq.${profile.id}`);
     }
 
@@ -50,7 +52,9 @@ export function useLeads(profile, { handoffStages = [], stagesLoading = false } 
     let payload = { ...updates, last_interaction: new Date().toISOString().split("T")[0] };
     
     // Auto-claiming logic for updates (e.g., column move)
-    if (["closer", "vendedor"].includes(profile?.role?.toLowerCase())) {
+    const role = profile?.role?.toLowerCase();
+    // Auto-claiming logic for updates (e.g., column move)
+    if (["closer", "vendedor"].includes(role)) {
       const currentLead = leads.find(l => l.id === id);
       if (currentLead && !currentLead.closer_id) {
         payload.closer_id = profile.id;

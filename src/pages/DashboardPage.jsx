@@ -100,20 +100,21 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
   ];
   const maxF = Math.max(...funnel.map(d => d.c), 1);
 
+  const userRole = profile?.role?.toLowerCase();
   return (
     <div style={{ paddingBottom: 40 }}>
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
             <h1 style={{ fontSize: 32, fontWeight: 900, color: "#f1f5f9", margin: "0 0 6px", letterSpacing: "-1px", textTransform: "uppercase" }}>
-              {profile?.role === "admin" ? "DASHBOARD GERAL" : `OLÁ, ${profile?.name?.split(" ")[0]}`}
+              {userRole === "admin" ? "DASHBOARD GERAL" : `OLÁ, ${profile?.name?.split(" ")[0]}`}
             </h1>
             <p style={{ fontSize: 13, color: "#475569", fontWeight: 800, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {profile?.role === "admin" ? "VISÃO TÁTICA DA OPERAÇÃO COMERCIAL" : profile?.role === "sdr" ? "SUA ÁREA DE PROSPECÇÃO" : "SUAS NEGOCIAÇÕES"}
+              {userRole === "admin" ? "VISÃO TÁTICA DA OPERAÇÃO COMERCIAL" : userRole === "sdr" ? "SUA ÁREA DE PROSPECÇÃO" : "SUAS NEGOCIAÇÕES"}
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {profile?.role === "admin" && (
+            {userRole === "admin" && (
               <button 
                 onClick={handleSendWhatsApp}
                 disabled={sendingWA}
@@ -150,7 +151,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
         <MetricCard label="Conversão" value={`${taxa}%`} icon="🎯" color="#8b5cf6" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: profile?.role === "admin" ? "1fr 1fr" : "1fr", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: userRole === "admin" ? "1fr 1fr" : "1fr", gap: 24 }}>
         <div style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 2, padding: 32 }}>
           <h3 style={{ fontSize: 14, fontWeight: 900, color: "#f1f5f9", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 32 }}>FUNIL DE VENDAS</h3>
           {funnel.map(d => (
@@ -166,22 +167,22 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
           ))}
         </div>
 
-        {profile?.role === "admin" && (
+        {userRole === "admin" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {[{
-              title: "EQUIPE SDR", users: allUsers.filter(u => u.role === "sdr"), getStats: u => ({
+              title: "EQUIPE SDR", users: allUsers.filter(u => u.role?.toLowerCase() === "sdr"), getStats: u => ({
                 a: `${leads.filter(l => l.sdr_id === u.id).length} LEADS`,
                 b: `${leads.filter(l => l.sdr_id === u.id && closerStageNames.includes(l.status)).length} QUALIF`
               })
             },
             {
-              title: "EQUIPE CLOSER", users: allUsers.filter(u => u.role === "closer"), getStats: u => ({
+              title: "EQUIPE CLOSER", users: allUsers.filter(u => u.role?.toLowerCase() === "closer"), getStats: u => ({
                 a: `${leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").length} GANHOS`,
                 b: fmt(leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").reduce((s, l) => s + (l.deal_value || 0), 0))
               })
             },
             {
-              title: "EQUIPE DE VENDAS", users: allUsers.filter(u => u.role === "vendedor"), getStats: u => ({
+              title: "EQUIPE DE VENDAS", users: allUsers.filter(u => u.role?.toLowerCase() === "vendedor"), getStats: u => ({
                 a: `${leads.filter(l => l.sdr_id === u.id).length} LEADS`,
                 b: `${leads.filter(l => l.closer_id === u.id && l.status === "Fechado - Ganho").length} GANHOS`
               })
@@ -207,7 +208,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
           </div>
         )}
 
-        {profile?.role !== "admin" && (
+        {userRole !== "admin" && (
           <div style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 2, padding: 24 }}>
             <h3 style={{ fontSize: 14, fontWeight: 900, color: "#f1f5f9", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 20 }}>LEADS RECENTES</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

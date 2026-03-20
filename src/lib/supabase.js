@@ -99,6 +99,7 @@ const supabase = (() => {
       upsert(data) { state.method = "POST"; state.body = JSON.stringify(data); state.extraHeaders["Prefer"] = "resolution=merge-duplicates,return=representation"; return b; },
       delete() { state.method = "DELETE"; return b; },
       eq(col, val) { state.params.append(col, `eq.${val}`); return b; },
+      or(expr) { state.params.set("or", `(${expr})`); return b; },
       order(col, { ascending = true } = {}) { state.params.set("order", `${col}.${ascending ? "asc" : "desc"}`); return b; },
       limit(n) { state.params.set("limit", n); return b; },
       single() { state.extraHeaders["Accept"] = "application/vnd.pgrst.object+json"; state.single = true; return b; },

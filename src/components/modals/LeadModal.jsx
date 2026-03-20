@@ -12,9 +12,10 @@ export function LeadModal({ lead, onClose, onSave, profile, allUsers, stagesData
   const [saving, setSaving] = useState(false);
   
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const sdrs = allUsers.filter(u => u.role === "sdr" || u.role === "vendedor");
-  const closers = allUsers.filter(u => u.role === "closer" || u.role === "vendedor");
-  const canEdit = profile?.role === "admin" || profile?.id === lead.sdr_id || profile?.id === lead.closer_id;
+  const sdrs = allUsers.filter(u => u.role?.toLowerCase() === "sdr" || u.role?.toLowerCase() === "vendedor");
+  const closers = allUsers.filter(u => u.role?.toLowerCase() === "closer" || u.role?.toLowerCase() === "vendedor");
+  const userRole = profile?.role?.toLowerCase();
+  const canEdit = userRole === "admin" || profile?.id === lead.sdr_id || profile?.id === lead.closer_id;
 
   const handleSave = async () => {
     setSaving(true);
@@ -53,7 +54,7 @@ export function LeadModal({ lead, onClose, onSave, profile, allUsers, stagesData
               {[["Temperatura", "temperatura", ["Quente", "Morno", "Frio"]], ["Qualidade", "qualidade", ["Alta", "Média", "Baixa"]], ["Status", "status", allStages]].map(([l, k, opts]) => (
                 <div key={k}><label style={{ display: "block", fontSize: 11, color: "#334155", marginBottom: 3 }}>{l}</label><select value={form[k] || ""} onChange={set(k)} style={INP}>{opts.map(o => <option key={o}>{o}</option>)}</select></div>
               ))}
-              {profile?.role === "admin" && (
+              {userRole === "admin" && (
                 <>
                   <div><label style={{ display: "block", fontSize: 11, color: "#334155", marginBottom: 3 }}>SDR</label><select value={form.sdr_id || ""} onChange={set("sdr_id")} style={INP}><option value="">— Nenhum —</option>{sdrs.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
                   <div><label style={{ display: "block", fontSize: 11, color: "#334155", marginBottom: 3 }}>Closer</label><select value={form.closer_id || ""} onChange={set("closer_id")} style={INP}><option value="">— Nenhum —</option>{closers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>

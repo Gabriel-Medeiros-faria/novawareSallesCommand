@@ -35,15 +35,16 @@ export function AppShell() {
     return () => window.removeEventListener("keydown", handleKeys);
   }, []);
 
+  const userRole = profile?.role?.toLowerCase();
   const navItems = [
     { id: "dashboard", label: "DASHBOARD", icon: "◈" },
-    ...(["admin", "sdr"].includes(profile?.role) ? [{ id: "sdr_pipeline", label: "PIPELINE SDR", icon: "⟫" }] : []),
-    ...(["admin", "closer"].includes(profile?.role) ? [{ id: "closer_pipeline", label: "PIPELINE CLOSER", icon: "⟫" }] : []),
-    ...(["admin", "vendedor"].includes(profile?.role) ? [{ id: "sales_pipeline", label: "PIPELINE VENDAS", icon: "⟫" }] : []),
+    ...(["admin", "sdr"].includes(userRole) ? [{ id: "sdr_pipeline", label: "PIPELINE SDR", icon: "⟫" }] : []),
+    ...(["admin", "closer"].includes(userRole) ? [{ id: "closer_pipeline", label: "PIPELINE CLOSER", icon: "⟫" }] : []),
+    ...(["admin", "vendedor"].includes(userRole) ? [{ id: "sales_pipeline", label: "PIPELINE VENDAS", icon: "⟫" }] : []),
     { id: "leads", label: "LEADS", icon: "⊞" },
     { id: "goals", label: "METAS", icon: "◎" },
     { id: "copilot", label: "COPILOT AI", icon: "✦", accent: true },
-    ...(profile?.role === "admin" ? [{ id: "users", label: "USUÁRIOS", icon: "👥", divider: true }] : []),
+    ...(userRole === "admin" ? [{ id: "users", label: "USUÁRIOS", icon: "👥", divider: true }] : []),
   ];
 
   return (
@@ -137,7 +138,7 @@ export function AppShell() {
             {page === "leads" && <LeadsPage leads={leads} onOpen={setSelectedLead} allUsers={allUsers} stagesData={stagesData} />}
             {page === "goals" && <GoalsPage goals={goals} createGoal={createGoal} updateGoal={updateGoal} deleteGoal={deleteGoal} profile={profile} allUsers={allUsers} />}
             {page === "copilot" && <CopilotPage leads={leads} profile={profile} />}
-            {page === "users" && profile?.role === "admin" && <UsersPage allUsers={allUsers} onUserCreated={refreshLeads} />}
+            {page === "users" && profile?.role?.toLowerCase() === "admin" && <UsersPage allUsers={allUsers} onUserCreated={refreshLeads} />}
           </div>
         </div>
       </div>

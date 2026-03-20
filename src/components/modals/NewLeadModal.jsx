@@ -4,15 +4,16 @@ import { INP } from "../../utils/constants";
 
 export function NewLeadModal({ onClose, onCreate, profile, allUsers, stagesData }) {
   const { sdrStages = [] } = stagesData || {};
-  const sdrs = allUsers.filter(u => u.role === "sdr" || u.role === "vendedor");
-  const closers = allUsers.filter(u => u.role === "closer" || u.role === "vendedor");
+  const sdrs = allUsers.filter(u => u.role?.toLowerCase() === "sdr" || u.role?.toLowerCase() === "vendedor");
+  const closers = allUsers.filter(u => u.role?.toLowerCase() === "closer" || u.role?.toLowerCase() === "vendedor");
   
+  const userRole = profile?.role?.toLowerCase();
   const [form, setForm] = useState({ 
     nome_lead: "", empresa: "", telefone: "", email: "", 
     origem_lead: "LinkedIn", temperatura: "Morno", qualidade: "Média", 
     observacoes: "", 
-    sdr_id: ["sdr", "vendedor"].includes(profile?.role) ? profile.id : (sdrs[0]?.id || ""), 
-    closer_id: profile?.role === "vendedor" ? profile.id : "", 
+    sdr_id: ["sdr", "vendedor"].includes(userRole) ? profile.id : (sdrs[0]?.id || ""), 
+    closer_id: userRole === "vendedor" ? profile.id : "", 
     deal_value: "" 
   });
   
@@ -27,12 +28,14 @@ export function NewLeadModal({ onClose, onCreate, profile, allUsers, stagesData 
     setLoading(true);
     
     const finalForm = { ...form };
-    if (profile?.role === "sdr") finalForm.sdr_id = profile.id;
-    if (profile?.role === "vendedor") {
+    const userRole = profile?.role?.toLowerCase();
+    
+    if (userRole === "sdr") finalForm.sdr_id = profile.id;
+    if (userRole === "vendedor") {
       finalForm.sdr_id = profile.id;
       finalForm.closer_id = profile.id;
     }
-    if (profile?.role === "closer") finalForm.closer_id = profile.id;
+    if (userRole === "closer") finalForm.closer_id = profile.id;
 
     const defaultStatus = sdrStages[0]?.name || "Novo Lead";
 
@@ -74,7 +77,7 @@ export function NewLeadModal({ onClose, onCreate, profile, allUsers, stagesData 
             </select>
           </Field>
 
-          {profile?.role === "admin" && (
+          {profile?.role?.toLowerCase() === "admin" && (
             <>
               <Field label="Atribuir SDR">
                 <select value={form.sdr_id} onChange={set("sdr_id")} style={INP}>
