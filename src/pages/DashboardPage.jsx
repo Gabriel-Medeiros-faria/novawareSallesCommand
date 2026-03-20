@@ -7,6 +7,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
 
   const [sendingWA, setSendingWA] = React.useState(false);
   const [showQR, setShowQR] = React.useState(false);
+  const [showConfirm, setShowConfirm] = React.useState(false);
   const [qrCode, setQrCode] = React.useState(null);
 
   React.useEffect(() => {
@@ -14,13 +15,13 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
     if (showQR) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch("http://localhost:3001/status");
+          const res = await fetch("https://novaware-whatsapp.onrender.com/status");
           const data = await res.json();
           if (data.connected) {
             setShowQR(false);
             setQrCode(null);
             clearInterval(interval);
-            alert("✅ WhatsApp Conectado!");
+            setShowConfirm(true); // Abre o próximo modal ao conectar
           } else if (data.qr) {
             setQrCode(data.qr);
           }
@@ -42,8 +43,7 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
     try {
       setSendingWA(true);
       
-      // Primeiro verifica status
-      const res = await fetch("http://localhost:3001/status");
+      const res = await fetch("https://novaware-whatsapp.onrender.com/status");
       const data = await res.json();
 
       if (!data.connected) {
@@ -57,23 +57,28 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
         return;
       }
 
-      // Se estiver conectado, pergunta o que fazer
-      const choice = window.confirm("✅ WhatsApp Conectado!\n\nDeseja ENVIAR o resumo para o grupo agora?\n\n(Clique em CANCELAR se quiser apenas verificar a conexão)");
-      
-      if (!choice) {
-        setSendingWA(false);
-        return;
-      }
-
-      const sendRes = await fetch("http://localhost:3001/send-report");
-      const sendData = await sendRes.json();
-      if (sendData.success) {
-        alert("🚀 Relatório enviado com sucesso!");
-      } else {
-        alert("❌ Erro ao enviar: " + (sendData.error || "Serviço offline"));
-      }
+      // Se já estiver conectado, abre o modal de confirmação
+      setShowConfirm(true);
+      setSendingWA(false);
     } catch (err) {
       alert("❌ Erro: O serviço de WhatsApp parece estar offline.");
+      setSendingWA(false);
+    }
+  };
+
+  const executeSendReport = async () => {
+    try {
+      setSendingWA(true);
+      setShowConfirm(false);
+      const res = await fetch("https://novaware-whatsapp.onrender.com/send-report");
+      const data = await res.json();
+      if (data.success) {
+        alert("🚀 Relatório enviado com sucesso!");
+      } else {
+        alert("❌ Erro ao enviar: " + (data.error || "Serviço offline"));
+      }
+    } catch (err) {
+      alert("❌ Erro técnico ao enviar relatório.");
     } finally {
       setSendingWA(false);
     }
@@ -219,6 +224,56 @@ export function DashboardPage({ leads, goals, profile, allUsers, stagesData }) {
           </div>
         )}
       </div>
+
+      {showConfirm && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, backdropFilter: "blur(8px)" }}>
+          <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.08)", padding: 40, borderRadius: 2, textAlign: "center", maxWidth: 450, width: "95%" }}>
+            <div style={{ fontSize: 40, marginBottom: 20 }}>✅</div>
+            <h2 style={{ fontSize: 18, fontWeight: 900, color: "#f1f5f9", textTransform: "uppercase", marginBottom: 12, letterSpacing: "1px" }}>WHATSAPP CONECTADO</h2>
+            <p style={{ fontSize: 13, color: "#94a3b8", fontWeight: 600, marginBottom: 32, lineHeight: "1.6" }}>
+              A conexão com o servidor está ativa. Deseja disparar o relatório de performance para o grupo agora?
+            </p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <button 
+                onClick={executeSendReport} 
+                disabled={sendingWA}
+                style={{ 
+                  background: "#22c55e", 
+                  color: "#fff", 
+                  border: "none",
+                  padding: "14px", 
+                  fontWeight: 900, 
+                  cursor: "pointer", 
+                  textTransform: "uppercase", 
+                  fontSize: 12,
+                  letterSpacing: "0.05em",
+                  borderRadius: 2
+                }}
+              >
+                {sendingWA ? "ENVIANDO..." : "🚀 SIM, ENVIAR AGORA"}
+              </button>
+              
+              <button 
+                onClick={() => setShowConfirm(false)} 
+                style={{ 
+                  background: "transparent", 
+                  border: "1px solid rgba(255,255,255,0.1)", 
+                  color: "#94a3b8", 
+                  padding: "12px", 
+                  fontWeight: 800, 
+                  cursor: "pointer", 
+                  textTransform: "uppercase", 
+                  fontSize: 11,
+                  borderRadius: 2
+                }}
+              >
+                APENAS VERIFICAR CONEXÃO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showQR && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(8px)" }}>
